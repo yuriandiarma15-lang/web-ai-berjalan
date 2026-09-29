@@ -1,18 +1,30 @@
-
-import React, { useEffect, useMemo, useState } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { Html, OrbitControls, ContactShadows } from '@react-three/drei'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import {
+  Html,
+  OrbitControls,
+  ContactShadows,
+  Float
+} from '@react-three/drei'
 import * as THREE from 'three'
 import {
   ArrowUpRight,
   Bot,
   Clock3,
+  Coffee,
   MessageSquare,
   Radio,
-  ShieldCheck
+  ShieldCheck,
+  Activity,
+  Users,
+  BarChart3
 } from 'lucide-react'
 
 const TELEGRAM_URL = 'https://t.me/'
+
+/* =========================================================
+   TEAM
+========================================================= */
 
 const TEAM = [
   {
@@ -42,23 +54,41 @@ const TEAM = [
     tf: 'M1',
     color: '#67d6b0',
     task: 'Short-term price monitoring'
+  },
+  {
+    id: 'fundamental',
+    name: 'Fundamental Analyst',
+    tf: 'NEWS',
+    color: '#ff8f8f',
+    task: 'Macro & fundamental monitoring'
   }
 ]
 
 const CHAT_LINES = [
-  ['M30 Analyst', 'Reviewing the higher timeframe view.'],
-  ['M15 Analyst', 'Updating market observation.'],
-  ['M5 Analyst', 'Monitoring the active price zone.'],
-  ['M1 Analyst', 'Refreshing the short-term chart.'],
-  ['Team Leader', 'Team, keep the trading floor ready.'],
-  ['M30 Analyst', 'Workspace status: all monitors online.']
+  ['M30 Analyst', 'Reviewing the morning market environment.'],
+  ['M15 Analyst', 'Anyone wants coffee?'],
+  ['Fundamental Analyst', 'Checking the latest macro calendar.'],
+  ['M5 Analyst', 'I will grab a coffee first.'],
+  ['M1 Analyst', 'Charts are looking quiet right now.'],
+  ['Team Leader', 'Keep the trading floor ready.'],
+  ['M30 Analyst', 'Workspace status: all monitors online.'],
+  ['Fundamental Analyst', 'Fundamental desk is monitoring news.'],
+  ['M15 Analyst', 'We will start analysis at minute 30.'],
+  ['M5 Analyst', 'Coffee acquired. Back to the desk.']
 ]
+
+/* =========================================================
+   JAKARTA CLOCK
+========================================================= */
 
 function useJakartaClock() {
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000)
+    const id = setInterval(() => {
+      setNow(new Date())
+    }, 1000)
+
     return () => clearInterval(id)
   }, [])
 
@@ -82,137 +112,374 @@ function useJakartaClock() {
   }
 }
 
-function ChartScreen({ tf, color }) {
-  const points = useMemo(() => {
-    let y = 0
+/* =========================================================
+   OFFICE MODE
+========================================================= */
 
-    return Array.from({ length: 24 }, (_, i) => {
-      y +=
-        Math.sin(i * 1.4 + tf.length) * 0.17 +
-        Math.cos(i * 0.63) * 0.09 +
-        (i % 5 === 0 ? 0.12 : -0.025)
+function getOfficeMode(clock) {
+  if (clock.minute === 0) return 'briefing'
+  if (clock.minute >= 30) return 'analysis'
+  return 'discussion'
+}
 
-      return [
-        ((i / 23) - 0.5) * 1.7,
-        y * 0.42,
-        0.015
-      ]
+/* =========================================================
+   ANIMATED CHART
+========================================================= */
+
+function AnimatedChart({ tf, color, active = true }) {
+  const group = useRef()
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (active) {
+        setTick(v => v + 1)
+      }
+    }, 650)
+
+    return () => clearInterval(id)
+  }, [active])
+
+  const candles = useMemo(() => {
+    let price = 0
+
+    return Array.from({ length: 20 }, (_, i) => {
+      const movement =
+        Math.sin((i + tick * 0.04) * 1.2 + tf.length) * 0.08 +
+        Math.cos(i * 0.71 + tick * 0.02) * 0.045
+
+      const open = price
+      const close = price + movement + (i % 4 === 0 ? 0.035 : -0.008)
+
+      const high = Math.max(open, close) + 0.045
+      const low = Math.min(open, close) - 0.045
+
+      price = close
+
+      return {
+        open,
+        close,
+        high,
+        low
+      }
     })
-  }, [tf])
+  }, [tf, tick])
 
   return (
-    <group>
+    <group ref={group}>
       <mesh>
-        <boxGeometry args={[1.16, 0.73, 0.08]} />
-        <meshStandardMaterial color="#091523" roughness={0.55} />
+        <boxGeometry args={[1.3, 0.82, 0.08]} />
+        <meshStandardMaterial
+          color="#07121e"
+          roughness={0.48}
+          metalness={0.18}
+        />
       </mesh>
 
       <mesh position={[0, 0, 0.045]}>
-        <planeGeometry args={[1.06, 0.62]} />
-        <meshBasicMaterial color="#0b1928" />
+        <planeGeometry args={[1.18, 0.69]} />
+        <meshBasicMaterial color="#081624" />
       </mesh>
 
+      {/* Grid */}
       {Array.from({ length: 5 }, (_, i) => (
         <mesh
-          key={`h${i}`}
-          position={[0, -0.25 + i * 0.125, 0.052]}
+          key={`h-${i}`}
+          position={[0, -0.27 + i * 0.135, 0.053]}
         >
-          <planeGeometry args={[1.02, 0.003]} />
-          <meshBasicMaterial color="#24384a" />
+          <planeGeometry args={[1.13, 0.004]} />
+          <meshBasicMaterial color="#1b3144" />
         </mesh>
       ))}
 
       {Array.from({ length: 7 }, (_, i) => (
         <mesh
-          key={`v${i}`}
-          position={[-0.48 + i * 0.16, 0, 0.052]}
+          key={`v-${i}`}
+          position={[-0.53 + i * 0.176, 0, 0.053]}
         >
-          <planeGeometry args={[0.003, 0.59]} />
-          <meshBasicMaterial color="#203347" />
+          <planeGeometry args={[0.004, 0.67]} />
+          <meshBasicMaterial color="#182c3d" />
         </mesh>
       ))}
 
-      {points.slice(0, -1).map((p, i) => {
-        const q = points[i + 1]
+      {/* Candles */}
+      {candles.map((c, i) => {
+        const x = -0.51 + i * 0.054
 
-        const geom = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(p[0], p[1], 0.06),
-          new THREE.Vector3(q[0], q[1], 0.06)
-        ])
+        const scale = 1.25
+        const bodyHeight = Math.max(
+          Math.abs(c.close - c.open) * scale,
+          0.025
+        )
+
+        const bodyY =
+          ((c.open + c.close) / 2) * scale
+
+        const wickTop = c.high * scale
+        const wickBottom = c.low * scale
+
+        const bullish = c.close >= c.open
 
         return (
-          <line key={i} geometry={geom}>
-            <lineBasicMaterial color={color} />
-          </line>
+          <group key={i}>
+            <mesh
+              position={[
+                x,
+                (wickTop + wickBottom) / 2,
+                0.062
+              ]}
+            >
+              <boxGeometry
+                args={[
+                  0.008,
+                  Math.max(wickTop - wickBottom, 0.025),
+                  0.008
+                ]}
+              />
+              <meshBasicMaterial
+                color={bullish ? '#65d6a5' : '#e97878'}
+              />
+            </mesh>
+
+            <mesh
+              position={[x, bodyY, 0.067]}
+            >
+              <boxGeometry
+                args={[
+                  0.037,
+                  bodyHeight,
+                  0.025
+                ]}
+              >
+                <meshBasicMaterial
+                  color={bullish ? '#55c99b' : '#e86f72'}
+                />
+              </boxGeometry>
+            </mesh>
+          </group>
         )
       })}
 
-      {points.filter((_, i) => i % 3 === 0).map((p, i) => (
-        <mesh key={i} position={[p[0], p[1], 0.061]}>
-          <sphereGeometry args={[0.018, 6, 6]} />
-          <meshBasicMaterial color={i % 2 ? '#e4b65e' : color} />
-        </mesh>
-      ))}
+      {/* moving price line */}
+      <mesh position={[0.38, 0.15, 0.075]}>
+        <boxGeometry args={[0.18, 0.012, 0.012]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
 
-      <Html position={[0, 0.27, 0.07]} transform distanceFactor={5} center>
+      <Html
+        position={[0, 0.31, 0.08]}
+        transform
+        distanceFactor={5}
+        center
+      >
         <div className="screen-label">
           <b>XAUUSD</b>
           <span>{tf}</span>
+        </div>
+      </Html>
+
+      <Html
+        position={[0.36, -0.28, 0.08]}
+        transform
+        distanceFactor={5}
+        center
+      >
+        <div className="screen-price">
+          LIVE SIM
         </div>
       </Html>
     </group>
   )
 }
 
-function Desk({ position, tf, color, selected, onSelect }) {
+/* =========================================================
+   COMPUTER
+========================================================= */
+
+function Computer({ tf, color, working }) {
   return (
-    <group position={position} onClick={onSelect}>
-      <mesh position={[0, 0.72, 0]} castShadow>
-        <boxGeometry args={[1.65, 0.12, 0.85]} />
-        <meshStandardMaterial color="#d7c19c" roughness={0.75} />
-      </mesh>
+    <group>
+      {/* monitor */}
+      <group position={[0, 1.48, -0.17]}>
+        <AnimatedChart
+          tf={tf}
+          color={color}
+          active={working}
+        />
 
-      {[[-0.68, 0.34, -0.29], [0.68, 0.34, -0.29],
-        [-0.68, 0.34, 0.29], [0.68, 0.34, 0.29]].map((p, i) => (
-        <mesh key={i} position={p}>
-          <boxGeometry args={[0.09, 0.68, 0.09]} />
-          <meshStandardMaterial color="#9b876b" />
-        </mesh>
-      ))}
-
-      <group position={[0, 0.79, -0.17]} rotation={[-0.12, 0, 0]}>
-        <ChartScreen tf={tf} color={color} />
-
-        <mesh position={[0, -0.43, 0.02]}>
-          <boxGeometry args={[0.14, 0.09, 0.12]} />
-          <meshStandardMaterial color="#a7b5c1" />
+        <mesh position={[0, -0.51, 0]}>
+          <boxGeometry args={[0.13, 0.10, 0.13]} />
+          <meshStandardMaterial color="#aebbc5" />
         </mesh>
 
-        <mesh position={[0, -0.49, 0.02]}>
-          <boxGeometry args={[0.48, 0.035, 0.25]} />
-          <meshStandardMaterial color="#8d9ba8" />
+        <mesh position={[0, -0.57, 0]}>
+          <boxGeometry args={[0.5, 0.035, 0.27]} />
+          <meshStandardMaterial color="#7e8d99" />
         </mesh>
       </group>
 
-      <mesh position={[0.32, 0.79, 0.22]}>
-        <boxGeometry args={[0.48, 0.025, 0.17]} />
-        <meshStandardMaterial color="#e9e2d4" />
+      {/* keyboard */}
+      <mesh position={[0.34, 0.94, 0.24]}>
+        <boxGeometry args={[0.42, 0.025, 0.18]} />
+        <meshStandardMaterial color="#d8dedf" />
       </mesh>
 
-      <mesh position={[-0.36, 0.79, 0.22]}>
-        <boxGeometry args={[0.4, 0.025, 0.16]} />
-        <meshStandardMaterial color="#b7c6c8" />
+      {/* mouse */}
+      <mesh position={[0.62, 0.95, 0.23]}>
+        <boxGeometry args={[0.12, 0.025, 0.09]} />
+        <meshStandardMaterial color="#aeb7bb" />
       </mesh>
 
-      {selected && (
-        <mesh position={[0, 0.87, 0]}>
-          <boxGeometry args={[1.78, 0.015, 0.98]} />
-          <meshBasicMaterial color="#e7bd67" wireframe />
-        </mesh>
-      )}
+      {/* small desk light */}
+      <mesh position={[-0.38, 1.0, 0.22]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.16, 10]} />
+        <meshStandardMaterial color="#b6c1c5" />
+      </mesh>
     </group>
   )
 }
+
+/* =========================================================
+   DESK
+========================================================= */
+
+function Desk({
+  position,
+  tf,
+  color,
+  selected,
+  onSelect,
+  working
+}) {
+  return (
+    <group
+      position={position}
+      onClick={onSelect}
+    >
+      {/* tabletop */}
+      <mesh
+        position={[0, 0.72, 0]}
+        castShadow
+      >
+        <boxGeometry args={[1.62, 0.12, 0.86]} />
+        <meshStandardMaterial
+          color="#bca477"
+          roughness={0.72}
+        />
+      </mesh>
+
+      {/* legs */}
+      {[
+        [-0.68, 0.34, -0.29],
+        [0.68, 0.34, -0.29],
+        [-0.68, 0.34, 0.29],
+        [0.68, 0.34, 0.29]
+      ].map((p, i) => (
+        <mesh key={i} position={p}>
+          <boxGeometry args={[0.08, 0.68, 0.08]} />
+          <meshStandardMaterial color="#776958" />
+        </mesh>
+      ))}
+
+      {/* PC tower */}
+      <mesh position={[0.61, 0.96, -0.14]}>
+        <boxGeometry args={[0.16, 0.38, 0.34]} />
+        <meshStandardMaterial
+          color="#111b26"
+          roughness={0.35}
+          metalness={0.2}
+        />
+      </mesh>
+
+      {/* PC light */}
+      <mesh position={[0.61, 1.02, 0.035]}>
+        <boxGeometry args={[0.025, 0.025, 0.01]} />
+        <meshBasicMaterial
+          color={working ? '#59d6a2' : '#66707a'}
+        />
+      </mesh>
+
+      <Computer
+        tf={tf}
+        color={color}
+        working={working}
+      />
+
+      {/* paperwork */}
+      <mesh position={[-0.40, 0.79, 0.22]}>
+        <boxGeometry args={[0.34, 0.025, 0.22]} />
+        <meshStandardMaterial color="#e6e0d2" />
+      </mesh>
+
+      {/* coffee cup */}
+      <mesh position={[0.62, 0.82, 0.27]}>
+        <cylinderGeometry args={[0.055, 0.045, 0.10, 12]} />
+        <meshStandardMaterial color="#f0ece2" />
+      </mesh>
+
+      {/* selection */}
+      {selected && (
+        <mesh position={[0, 0.86, 0]}>
+          <boxGeometry args={[1.76, 0.015, 0.98]} />
+          <meshBasicMaterial
+            color="#e6bd67"
+            wireframe
+          />
+        </mesh>
+      )}
+
+      {/* working indicator */}
+      <Html
+        position={[0, 1.88, 0]}
+        center
+        distanceFactor={8}
+      >
+        <div
+          className={`desk-status ${
+            working ? 'working' : 'idle'
+          }`}
+        >
+          <i />
+          {working ? 'ANALYZING' : 'OFFLINE'}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+/* =========================================================
+   CHAIR
+========================================================= */
+
+function Chair({ position, occupied }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.43, 0]}>
+        <boxGeometry args={[0.50, 0.10, 0.44]} />
+        <meshStandardMaterial color="#263a4e" />
+      </mesh>
+
+      <mesh position={[0, 0.76, -0.18]}>
+        <boxGeometry args={[0.50, 0.55, 0.08]} />
+        <meshStandardMaterial color="#263a4e" />
+      </mesh>
+
+      <mesh position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.035, 0.035, 0.45, 8]} />
+        <meshStandardMaterial color="#6e7d89" />
+      </mesh>
+
+      <mesh position={[0, -0.02, 0]}>
+        <cylinderGeometry args={[0.22, 0.22, 0.035, 12]} />
+        <meshStandardMaterial color="#596873" />
+      </mesh>
+    </group>
+  )
+}
+
+/* =========================================================
+   PERSON
+========================================================= */
 
 function Person({
   position,
@@ -221,57 +488,238 @@ function Person({
   active = false,
   name,
   tf,
+  state = 'walking',
   onClick
 }) {
-  const [phase, setPhase] = useState(0)
+  const group = useRef()
+  const [phase, setPhase] = useState(Math.random() * 10)
 
   useEffect(() => {
-    const id = setInterval(() => setPhase(p => p + 1), 650)
+    const id = setInterval(() => {
+      setPhase(v => v + 1)
+    }, 500)
+
     return () => clearInterval(id)
   }, [])
 
-  const typing = Math.sin(phase * 0.8) * 0.035
+  useFrame((_, delta) => {
+    if (!group.current) return
+
+    const bob =
+      state === 'walking'
+        ? Math.sin(phase * 0.55) * 0.035
+        : Math.sin(phase * 0.3) * 0.008
+
+    group.current.position.y +=
+      (bob - (group.current.userData.bob || 0)) * delta * 8
+
+    group.current.userData.bob = bob
+  })
+
+  const walking = state === 'walking'
+  const coffee = state === 'coffee'
+
+  const armMove = walking
+    ? Math.sin(phase * 0.75) * 0.18
+    : state === 'working'
+      ? Math.sin(phase * 0.9) * 0.055
+      : 0
+
+  const seated = state === 'working'
 
   return (
-    <group position={position} onClick={onClick}>
-      <mesh position={[0, 0.32, 0.34]}>
-        <boxGeometry args={[0.5, 0.08, 0.42]} />
-        <meshStandardMaterial color="#273c55" />
+    <group
+      ref={group}
+      position={position}
+      onClick={onClick}
+    >
+      {/* chair-like shadow/body base */}
+      {seated && (
+        <mesh position={[0, 0.22, 0.25]}>
+          <boxGeometry args={[0.46, 0.08, 0.38]} />
+          <meshStandardMaterial color="#25384b" />
+        </mesh>
+      )}
+
+      {/* torso */}
+      <mesh
+        position={[
+          0,
+          seated ? 0.70 : 0.83,
+          0
+        ]}
+        castShadow
+      >
+        <boxGeometry
+          args={[
+            0.40,
+            seated ? 0.40 : 0.50,
+            0.30
+          ]}
+        />
+        <meshStandardMaterial
+          color={
+            leader
+              ? '#caa04e'
+              : '#3b668c'
+          }
+        />
       </mesh>
 
-      <mesh position={[0, 0.58, 0.49]}>
-        <boxGeometry args={[0.48, 0.48, 0.08]} />
-        <meshStandardMaterial color="#344d69" />
-      </mesh>
-
-      <mesh position={[0, 0.82, 0]} castShadow>
-        <boxGeometry args={[0.42, 0.5, 0.3]} />
-        <meshStandardMaterial color={leader ? '#d5ad59' : '#3d6b91'} />
-      </mesh>
-
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <sphereGeometry args={[0.19, 12, 10]} />
+      {/* head */}
+      <mesh
+        position={[
+          0,
+          seated ? 1.08 : 1.20,
+          0
+        ]}
+        castShadow
+      >
+        <sphereGeometry args={[0.18, 14, 12]} />
         <meshStandardMaterial color={color} />
       </mesh>
 
-      <mesh position={[0, 1.23, 0.16]}>
-        <boxGeometry args={[0.13, 0.025, 0.018]} />
-        <meshBasicMaterial color="#202a35" />
+      {/* hair */}
+      <mesh
+        position={[
+          0,
+          seated ? 1.19 : 1.31,
+          0
+        ]}
+      >
+        <sphereGeometry args={[0.17, 12, 8]} />
+        <meshStandardMaterial color="#25282c" />
       </mesh>
 
-      <mesh position={[-0.27, 0.85, -0.02]} rotation={[0, 0, -0.45 + typing]}>
-        <boxGeometry args={[0.13, 0.38, 0.14]} />
-        <meshStandardMaterial color={leader ? '#d5ad59' : '#3d6b91'} />
+      {/* eyes */}
+      <mesh
+        position={[
+          -0.055,
+          seated ? 1.08 : 1.21,
+          0.166
+        ]}
+      >
+        <sphereGeometry args={[0.012, 6, 6]} />
+        <meshBasicMaterial color="#1c2227" />
       </mesh>
 
-      <mesh position={[0.27, 0.85, -0.02]} rotation={[0, 0, 0.45 - typing]}>
-        <boxGeometry args={[0.13, 0.38, 0.14]} />
-        <meshStandardMaterial color={leader ? '#d5ad59' : '#3d6b91'} />
+      <mesh
+        position={[
+          0.055,
+          seated ? 1.08 : 1.21,
+          0.166
+        ]}
+      >
+        <sphereGeometry args={[0.012, 6, 6]} />
+        <meshBasicMaterial color="#1c2227" />
       </mesh>
+
+      {/* left arm */}
+      <mesh
+        position={[
+          -0.27,
+          seated ? 0.72 : 0.83,
+          0.02
+        ]}
+        rotation={[
+          0,
+          0,
+          -0.45 + armMove
+        ]}
+      >
+        <boxGeometry args={[0.12, 0.36, 0.13]} />
+        <meshStandardMaterial
+          color={
+            leader
+              ? '#caa04e'
+              : '#3b668c'
+          }
+        />
+      </mesh>
+
+      {/* right arm */}
+      <mesh
+        position={[
+          0.27,
+          seated ? 0.72 : 0.83,
+          0.02
+        ]}
+        rotation={[
+          0,
+          0,
+          0.45 - armMove
+        ]}
+      >
+        <boxGeometry args={[0.12, 0.36, 0.13]} />
+        <meshStandardMaterial
+          color={
+            leader
+              ? '#caa04e'
+              : '#3b668c'
+          }
+        />
+      </mesh>
+
+      {/* legs */}
+      <mesh
+        position={[
+          -0.10,
+          seated ? 0.39 : 0.38,
+          0
+        ]}
+        rotation={[
+          walking
+            ? Math.sin(phase) * 0.35
+            : 0,
+          0,
+          0
+        ]}
+      >
+        <boxGeometry args={[0.12, 0.40, 0.13]} />
+        <meshStandardMaterial color="#26313c" />
+      </mesh>
+
+      <mesh
+        position={[
+          0.10,
+          seated ? 0.39 : 0.38,
+          0
+        ]}
+        rotation={[
+          walking
+            ? Math.sin(phase + Math.PI) * 0.35
+            : 0,
+          0,
+          0
+        ]}
+      >
+        <boxGeometry args={[0.12, 0.40, 0.13]} />
+        <meshStandardMaterial color="#26313c" />
+      </mesh>
+
+      {/* coffee cup */}
+      {coffee && (
+        <mesh position={[0.30, 0.93, 0.20]}>
+          <cylinderGeometry args={[0.055, 0.045, 0.11, 12]} />
+          <meshStandardMaterial color="#eee7d8" />
+        </mesh>
+      )}
 
       {name && (
-        <Html position={[0, 1.62, 0]} center distanceFactor={8}>
-          <div className={`name-tag ${leader ? 'leader-tag' : ''}`}>
+        <Html
+          position={[
+            0,
+            seated ? 1.48 : 1.63,
+            0
+          ]}
+          center
+          distanceFactor={8}
+        >
+          <div
+            className={`name-tag ${
+              leader ? 'leader-tag' : ''
+            }`}
+          >
             <span>{name}</span>
             {tf && <b>{tf}</b>}
           </div>
@@ -279,226 +727,806 @@ function Person({
       )}
 
       {active && (
-        <mesh position={[0, 1.48, 0]}>
-          <sphereGeometry args={[0.035, 8, 8]} />
-          <meshBasicMaterial color="#66e0ad" />
+        <mesh
+          position={[
+            0,
+            seated ? 1.38 : 1.48,
+            0
+          ]}
+        >
+          <sphereGeometry args={[0.032, 8, 8]} />
+          <meshBasicMaterial color="#65ddb0" />
         </mesh>
       )}
     </group>
   )
 }
 
-function OfficeScene({ leaderMeeting, selected, setSelected }) {
-  const leaderX = leaderMeeting ? -0.2 : -3.2
-  const leaderZ = leaderMeeting ? -1.05 : -2.25
+/* =========================================================
+   COFFEE MACHINE
+========================================================= */
+
+function CoffeeMachine({ position }) {
+  const [steam, setSteam] = useState(false)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSteam(v => !v)
+    }, 900)
+
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <group position={position}>
+      {/* cabinet */}
+      <mesh position={[0, 0.55, 0]}>
+        <boxGeometry args={[1.15, 1.1, 0.55]} />
+        <meshStandardMaterial
+          color="#252e37"
+          roughness={0.38}
+          metalness={0.4}
+        />
+      </mesh>
+
+      {/* machine top */}
+      <mesh position={[0, 1.15, 0]}>
+        <boxGeometry args={[0.85, 0.16, 0.44]} />
+        <meshStandardMaterial color="#111820" />
+      </mesh>
+
+      {/* display */}
+      <mesh position={[0, 0.92, 0.285]}>
+        <boxGeometry args={[0.30, 0.13, 0.018]} />
+        <meshBasicMaterial color="#172e36" />
+      </mesh>
+
+      <Html
+        position={[0, 0.92, 0.30]}
+        transform
+        distanceFactor={5}
+        center
+      >
+        <div className="coffee-display">
+          COFFEE
+        </div>
+      </Html>
+
+      {/* buttons */}
+      {[-0.18, 0, 0.18].map((x, i) => (
+        <mesh
+          key={i}
+          position={[x, 0.69, 0.29]}
+        >
+          <sphereGeometry args={[0.035, 8, 8]} />
+          <meshBasicMaterial
+            color={
+              i === 1
+                ? '#d9b65f'
+                : '#64717b'
+            }
+          />
+        </mesh>
+      ))}
+
+      {/* cup tray */}
+      <mesh position={[0, 0.46, 0.30]}>
+        <boxGeometry args={[0.58, 0.035, 0.30]} />
+        <meshStandardMaterial color="#11161b" />
+      </mesh>
+
+      {/* coffee cup */}
+      <mesh position={[0, 0.56, 0.30]}>
+        <cylinderGeometry args={[0.075, 0.06, 0.12, 12]} />
+        <meshStandardMaterial color="#eee9df" />
+      </mesh>
+
+      {/* steam */}
+      {steam && (
+        <>
+          <mesh position={[-0.025, 0.76, 0.30]}>
+            <sphereGeometry args={[0.018, 6, 6]} />
+            <meshBasicMaterial color="#d5dadd" transparent opacity={0.45} />
+          </mesh>
+
+          <mesh position={[0.025, 0.81, 0.30]}>
+            <sphereGeometry args={[0.014, 6, 6]} />
+            <meshBasicMaterial color="#d5dadd" transparent opacity={0.35} />
+          </mesh>
+        </>
+      )}
+
+      <Html
+        position={[0, 1.48, 0]}
+        center
+        distanceFactor={8}
+      >
+        <div className="machine-label">
+          <Coffee size={13} />
+          COFFEE STATION
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+/* =========================================================
+   BOOKSHELF
+========================================================= */
+
+function Bookshelf({ position }) {
+  const books = [
+    '#496c82',
+    '#9a7459',
+    '#627c63',
+    '#a98d55',
+    '#735d7b',
+    '#4f6774'
+  ]
+
+  return (
+    <group position={position}>
+      <mesh position={[0, 1.1, 0]}>
+        <boxGeometry args={[1.25, 2.2, 0.34]} />
+        <meshStandardMaterial color="#4d3d31" />
+      </mesh>
+
+      {[0.25, 0.8, 1.35].map((y, row) => (
+        <group key={row}>
+          {books.map((c, i) => (
+            <mesh
+              key={i}
+              position={[
+                -0.44 + i * 0.17,
+                y,
+                0.20
+              ]}
+            >
+              <boxGeometry
+                args={[
+                  0.12,
+                  0.34 + (i % 2) * 0.04,
+                  0.09
+                ]}
+              />
+              <meshStandardMaterial color={c} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/* =========================================================
+   WALL CLOCK
+========================================================= */
+
+function WallClock({ position }) {
+  return (
+    <group position={position}>
+      <mesh>
+        <cylinderGeometry
+          args={[0.42, 0.42, 0.07, 32]}
+          rotation={[Math.PI / 2, 0, 0]}
+        />
+        <meshStandardMaterial
+          color="#d4d5d2"
+          roughness={0.35}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.045]}>
+        <cylinderGeometry
+          args={[0.34, 0.34, 0.015, 32]}
+          rotation={[Math.PI / 2, 0, 0]}
+        />
+        <meshBasicMaterial color="#102033" />
+      </mesh>
+
+      <mesh
+        position={[0, 0.09, 0.06]}
+        rotation={[0, 0, 0]}
+      >
+        <boxGeometry args={[0.018, 0.18, 0.012]} />
+        <meshBasicMaterial color="#e5c36e" />
+      </mesh>
+
+      <mesh
+        position={[0.08, 0, 0.065]}
+        rotation={[0, 0, -0.8]}
+      >
+        <boxGeometry args={[0.018, 0.16, 0.012]} />
+        <meshBasicMaterial color="#e5c36e" />
+      </mesh>
+    </group>
+  )
+}
+
+/* =========================================================
+   PLANT
+========================================================= */
+
+function Plant({ position }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.22, 0.17, 0.38, 12]} />
+        <meshStandardMaterial color="#a66e4d" />
+      </mesh>
+
+      {[
+        [-0.16, 0.58, 0],
+        [0.16, 0.65, 0],
+        [0, 0.78, 0],
+        [-0.05, 0.95, 0],
+        [0.18, 0.86, 0]
+      ].map((p, i) => (
+        <mesh
+          key={i}
+          position={p}
+          rotation={[
+            0,
+            0,
+            (i - 2) * 0.28
+          ]}
+        >
+          <sphereGeometry args={[0.12, 8, 6]} />
+          <meshStandardMaterial color="#477153" />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/* =========================================================
+   OFFICE SCENE
+========================================================= */
+
+function OfficeScene({
+  mode,
+  selected,
+  setSelected
+}) {
+  const [coffeePerson, setCoffeePerson] = useState(null)
+
+  /*
+    Simple simulated walking positions.
+    They change according to office mode.
+  */
+
+  const deskPositions = [
+    [-3.15, 0, 0.50],
+    [-1.55, 0, 0.50],
+    [0.05, 0, 0.50],
+    [1.65, 0, 0.50],
+    [3.25, 0, 0.50]
+  ]
+
+  const walkingPositions = [
+    [-2.85, 0, -0.65],
+    [-1.15, 0, -0.95],
+    [0.55, 0, -0.70],
+    [2.35, 0, -0.90],
+    [3.25, 0, -1.55]
+  ]
+
+  const coffeePositions = [
+    [2.75, 0, -2.05],
+    [2.35, 0, -1.90],
+    [2.10, 0, -2.10],
+    [2.75, 0, -1.70],
+    [2.35, 0, -1.65]
+  ]
+
+  useEffect(() => {
+    if (mode !== 'discussion') {
+      setCoffeePerson(null)
+      return
+    }
+
+    const id = setInterval(() => {
+      const random =
+        Math.floor(Math.random() * TEAM.length)
+
+      setCoffeePerson(random)
+
+      setTimeout(() => {
+        setCoffeePerson(null)
+      }, 6500)
+    }, 16000)
+
+    return () => clearInterval(id)
+  }, [mode])
+
+  const leaderPosition =
+    mode === 'briefing'
+      ? [0, 0.25, -1.45]
+      : mode === 'analysis'
+        ? [1.65, 0.15, -0.85]
+        : [-1.3, 0.15, -1.45]
 
   return (
     <>
-      <color attach="background" args={['#091321']} />
+      {/* =================================================
+          ENVIRONMENT
+      ================================================= */}
 
-      <ambientLight intensity={1.5} />
+      <color
+        attach="background"
+        args={['#07111e']}
+      />
+
+      <ambientLight intensity={1.45} />
+
       <directionalLight
         position={[4, 8, 5]}
-        intensity={2.4}
+        intensity={2.7}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
       />
+
       <pointLight
         position={[-4, 3, -3]}
-        intensity={12}
-        color="#326bb4"
-        distance={12}
+        intensity={11}
+        color="#376fb4"
+        distance={13}
       />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]} receiveShadow>
-        <planeGeometry args={[13, 9]} />
-        <meshStandardMaterial color="#18283d" roughness={0.85} />
+      <pointLight
+        position={[4, 3, -1]}
+        intensity={8}
+        color="#c28a45"
+        distance={10}
+      />
+
+      {/* floor */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.03, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[14, 10]} />
+        <meshStandardMaterial
+          color="#172637"
+          roughness={0.82}
+        />
       </mesh>
 
-      <gridHelper args={[13, 26, '#294362', '#1d3048']} position={[0, 0.005, 0]} />
+      {/* floor grid */}
+      <gridHelper
+        args={[
+          14,
+          28,
+          '#2b435e',
+          '#1b2e44'
+        ]}
+        position={[0, 0.005, 0]}
+      />
 
-      {/* Office back wall */}
-      <mesh position={[0, 1.8, -3.8]}>
-        <boxGeometry args={[12, 3.7, 0.18]} />
-        <meshStandardMaterial color="#e6e9e9" />
+      {/* back wall */}
+      <mesh position={[0, 2.0, -4.0]}>
+        <boxGeometry args={[13, 4, 0.18]} />
+        <meshStandardMaterial color="#dfe3e2" />
       </mesh>
 
-      {/* Brand sign */}
-      <mesh position={[0, 2.1, -3.68]}>
-        <boxGeometry args={[3.8, 1.15, 0.08]} />
-        <meshStandardMaterial color="#102139" />
+      {/* side walls */}
+      <mesh position={[-6.5, 2, 0]}>
+        <boxGeometry args={[0.18, 4, 8]} />
+        <meshStandardMaterial color="#d8dcdb" />
       </mesh>
 
-      <Html position={[0, 2.12, -3.61]} center distanceFactor={8}>
+      <mesh position={[6.5, 2, 0]}>
+        <boxGeometry args={[0.18, 4, 8]} />
+        <meshStandardMaterial color="#d8dcdb" />
+      </mesh>
+
+      {/* wall panel */}
+      <mesh position={[0, 3.18, -3.86]}>
+        <boxGeometry args={[11.5, 0.07, 0.08]} />
+        <meshStandardMaterial color="#bca66e" />
+      </mesh>
+
+      {/* =================================================
+          BRAND
+      ================================================= */}
+
+      <mesh position={[0, 2.45, -3.82]}>
+        <boxGeometry args={[4.2, 1.05, 0.08]} />
+        <meshStandardMaterial color="#0c1b2c" />
+      </mesh>
+
+      <Html
+        position={[0, 2.45, -3.73]}
+        center
+        distanceFactor={8}
+      >
         <div className="wall-logo">
           <small>ARTIFICIAL INTELLIGENCE</small>
           <strong>XAU AI</strong>
           <b>SMC GOLD</b>
+          <span>TRADING INTELLIGENCE OFFICE</span>
         </div>
       </Html>
 
-      {/* Windows */}
-      {[-4.3, -2.8, 2.8, 4.3].map((x, i) => (
-        <group key={i} position={[x, 1.75, -3.67]}>
-          <mesh>
-            <boxGeometry args={[1.1, 1.45, 0.06]} />
-            <meshStandardMaterial
-              color="#b8d0df"
-              emissive="#233f56"
-              emissiveIntensity={0.25}
-            />
-          </mesh>
-          <mesh position={[0, 0, 0.04]}>
-            <boxGeometry args={[1.18, 1.53, 0.04]} />
-            <meshStandardMaterial color="#c6a76c" />
-          </mesh>
-        </group>
-      ))}
+      {/* windows */}
+      {[-4.7, -3.25, 3.25, 4.7].map(
+        (x, i) => (
+          <group
+            key={i}
+            position={[x, 1.75, -3.67]}
+          >
+            <mesh>
+              <boxGeometry
+                args={[1.05, 1.45, 0.06]}
+              />
+              <meshStandardMaterial
+                color="#9ebed2"
+                emissive="#25415a"
+                emissiveIntensity={0.35}
+              />
+            </mesh>
 
-      {/* Four analyst desks */}
+            <mesh
+              position={[0, 0, 0.04]}
+            >
+              <boxGeometry
+                args={[1.13, 1.53, 0.04]}
+              />
+              <meshStandardMaterial
+                color="#b79c64"
+              />
+            </mesh>
+          </group>
+        )
+      )}
+
+      {/* =================================================
+          WALL CLOCK
+      ================================================= */}
+
+      <WallClock
+        position={[-5.65, 2.55, -3.68]}
+      />
+
+      {/* =================================================
+          BOOKSHELF
+      ================================================= */}
+
+      <Bookshelf
+        position={[5.35, 0, -3.52]}
+      />
+
+      {/* =================================================
+          PLANTS
+      ================================================= */}
+
+      <Plant position={[-5.2, 0, -2.7]} />
+      <Plant position={[5.25, 0, 1.5]} />
+
+      {/* =================================================
+          COFFEE MACHINE
+      ================================================= */}
+
+      <CoffeeMachine
+        position={[3.95, 0, -2.55]}
+      />
+
+      {/* coffee cabinet */}
+      <mesh
+        position={[3.95, 0.15, -2.05]}
+      >
+        <boxGeometry args={[1.65, 0.30, 0.55]} />
+        <meshStandardMaterial color="#6d5848" />
+      </mesh>
+
+      {/* =================================================
+          DESKS
+      ================================================= */}
+
       {TEAM.map((a, i) => {
-        const x = -2.55 + i * 1.7
-        const z = 0.45
+        const desk = deskPositions[i]
+
+        const isWorking =
+          mode === 'analysis'
 
         return (
           <group key={a.id}>
             <Desk
-              position={[x, 0, z]}
+              position={desk}
               tf={a.tf}
               color={a.color}
-              selected={selected === a.id}
-              onSelect={() => setSelected(selected === a.id ? null : a.id)}
+              selected={
+                selected === a.id
+              }
+              working={isWorking}
+              onSelect={() =>
+                setSelected(
+                  selected === a.id
+                    ? null
+                    : a.id
+                )
+              }
             />
 
-            <Person
-              position={[x, 0, z + 1.12]}
-              name={a.name}
-              tf={a.tf}
-              active
-              color={['#d8a27e', '#b97c5c', '#e0b18c', '#c98d6d'][i]}
-              onClick={() => setSelected(selected === a.id ? null : a.id)}
+            <Chair
+              position={[
+                desk[0],
+                0,
+                desk[2] + 0.72
+              ]}
+              occupied={isWorking}
             />
+
+            {/* =================================================
+                PEOPLE
+            ================================================= */}
+
+            {mode === 'analysis' ? (
+              <Person
+                position={[
+                  desk[0],
+                  0,
+                  desk[2] + 0.48
+                ]}
+                name={a.name}
+                tf={a.tf}
+                active
+                state="working"
+                color={
+                  [
+                    '#d8a27e',
+                    '#b97c5c',
+                    '#e0b18c',
+                    '#c98d6d',
+                    '#d29b82'
+                  ][i]
+                }
+                onClick={() =>
+                  setSelected(
+                    selected === a.id
+                      ? null
+                      : a.id
+                  )
+                }
+              />
+            ) : (
+              <Person
+                position={
+                  coffeePerson === i
+                    ? coffeePositions[i]
+                    : walkingPositions[i]
+                }
+                name={a.name}
+                tf={a.tf}
+                active
+                state={
+                  coffeePerson === i
+                    ? 'coffee'
+                    : 'walking'
+                }
+                color={
+                  [
+                    '#d8a27e',
+                    '#b97c5c',
+                    '#e0b18c',
+                    '#c98d6d',
+                    '#d29b82'
+                  ][i]
+                }
+                onClick={() =>
+                  setSelected(
+                    selected === a.id
+                      ? null
+                      : a.id
+                  )
+                }
+              />
+            )}
           </group>
         )
       })}
 
-      {/* Leader podium and character */}
-      <mesh position={[-3.2, 0.15, -1.8]}>
-        <cylinderGeometry args={[0.52, 0.62, 0.3, 8]} />
-        <meshStandardMaterial color="#b99555" />
+      {/* =================================================
+          LEADER
+      ================================================= */}
+
+      <mesh
+        position={[0, 0.15, -1.50]}
+      >
+        <cylinderGeometry
+          args={[0.55, 0.65, 0.30, 8]}
+        />
+        <meshStandardMaterial
+          color="#b89555"
+        />
       </mesh>
 
       <Person
-        position={[leaderX, 0.3, leaderZ]}
+        position={leaderPosition}
         leader
         name="TEAM LEADER"
         active
+        state={
+          mode === 'briefing'
+            ? 'working'
+            : 'walking'
+        }
         color="#d9a17c"
       />
 
-      {leaderMeeting && (
-        <Html position={[-0.2, 2.05, -0.8]} center distanceFactor={7}>
+      {/* leader briefing */}
+      {mode === 'briefing' && (
+        <Html
+          position={[0, 2.12, -1.20]}
+          center
+          distanceFactor={7}
+        >
           <div className="leader-speech">
-            <b>TEAM, ATTENTION!</b>
+            <b>TEAM BRIEFING</b>
             <span>
-              SEND SIGNAL XAUUSD
+              PREPARE FOR XAUUSD
               <br />
-              TO TELEGRAM NOW!
+              ANALYSIS SESSION
             </span>
           </div>
         </Html>
       )}
 
+      {/* =================================================
+          MODE SIGN
+      ================================================= */}
+
+      <Html
+        position={[0, 3.42, -3.65]}
+        center
+        distanceFactor={8}
+      >
+        <div
+          className={`office-mode mode-${mode}`}
+        >
+          <span />
+          {mode === 'briefing' &&
+            'TEAM BRIEFING'}
+          {mode === 'analysis' &&
+            'ANALYSIS MODE'}
+          {mode === 'discussion' &&
+            'DISCUSSION MODE'}
+        </div>
+      </Html>
+
       <ContactShadows
         position={[0, -0.015, 0]}
-        opacity={0.35}
-        scale={12}
-        blur={2.5}
-        far={4}
+        opacity={0.38}
+        scale={13}
+        blur={2.7}
+        far={5}
       />
+
+      {/* =================================================
+          CAMERA
+      ================================================= */}
 
       <OrbitControls
         makeDefault
-        target={[0, 1, -0.3]}
-        minDistance={5}
-        maxDistance={13}
+        target={[0, 1, -0.5]}
+        minDistance={5.2}
+        maxDistance={13.5}
         maxPolarAngle={Math.PI / 2.05}
-        minPolarAngle={0.35}
+        minPolarAngle={0.32}
       />
     </>
   )
 }
 
+/* =========================================================
+   MAIN APP
+========================================================= */
+
 export default function App() {
   const clock = useJakartaClock()
 
-  const [leaderMeeting, setLeaderMeeting] = useState(false)
-  const [selected, setSelected] = useState(null)
-  const [chatIndex, setChatIndex] = useState(0)
-  const [lastTrigger, setLastTrigger] = useState('')
-  const [toast, setToast] = useState(false)
-  const [sceneReady, setSceneReady] = useState(false)
+  const [selected, setSelected] =
+    useState(null)
+
+  const [chatIndex, setChatIndex] =
+    useState(0)
+
+  const [sceneReady, setSceneReady] =
+    useState(false)
+
+  const [toast, setToast] =
+    useState(false)
+
+  const [lastMinute, setLastMinute] =
+    useState('')
+
+  const mode = getOfficeMode(clock)
+
+  /* =======================================================
+     CHAT ROTATION
+  ======================================================= */
 
   useEffect(() => {
     const id = setInterval(() => {
-      setChatIndex(i => (i + 1) % CHAT_LINES.length)
-    }, 4800)
+      setChatIndex(
+        i => (i + 1) % CHAT_LINES.length
+      )
+    }, 4300)
 
     return () => clearInterval(id)
   }, [])
 
-  // Simulasi briefing setiap jam 07:00 sampai 02:00 WIB.
-  // Tidak mengirim signal Telegram atau menjalankan analisis.
+  /* =======================================================
+     BRIEFING EVENT
+  ======================================================= */
+
   useEffect(() => {
-    const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(clock.weekday)
-    const inHours = clock.hour >= 7 || clock.hour <= 2
-    const key = `${clock.weekday}-${clock.hour}-${clock.minute}`
+    const key =
+      `${clock.weekday}-${clock.hour}-${clock.minute}`
 
     if (
-      weekday &&
-      inHours &&
       clock.minute === 0 &&
       clock.second < 2 &&
-      key !== lastTrigger
+      key !== lastMinute
     ) {
-      setLastTrigger(key)
-      setLeaderMeeting(true)
+      setLastMinute(key)
       setToast(true)
 
-      const id = setTimeout(() => {
-        setLeaderMeeting(false)
+      const timeout = setTimeout(() => {
         setToast(false)
-      }, 18000)
+      }, 15000)
 
-      return () => clearTimeout(id)
+      return () => clearTimeout(timeout)
     }
   }, [
     clock.weekday,
     clock.hour,
     clock.minute,
     clock.second,
-    lastTrigger
+    lastMinute
   ])
 
-  const current = TEAM.find(t => t.id === selected)
+  const current =
+    TEAM.find(
+      t => t.id === selected
+    )
 
   return (
     <main className="app-shell">
+
+      {/* =================================================
+          TOP BAR
+      ================================================= */}
+
       <header className="topbar">
-        <a className="brand" href="#">
-          <span className="brand-mark">Au</span>
+
+        <a
+          className="brand"
+          href="#"
+        >
+          <span className="brand-mark">
+            Au
+          </span>
+
           <span>
             <b>XAU AI</b>
-            <small>SMC GOLD · INTELLIGENCE OFFICE</small>
+            <small>
+              SMC GOLD · INTELLIGENCE OFFICE
+            </small>
           </span>
         </a>
 
         <div className="top-status">
           <span className="live-dot" />
+
           SYSTEM ONLINE
+
           <i />
+
           <Clock3 size={15} />
+
           {clock.time} WIB
         </div>
 
@@ -508,12 +1536,20 @@ export default function App() {
           target="_blank"
           rel="noreferrer"
         >
-          Join Telegram <ArrowUpRight size={16} />
+          Join Telegram
+          <ArrowUpRight size={16} />
         </a>
+
       </header>
 
+      {/* =================================================
+          HERO
+      ================================================= */}
+
       <section className="hero">
+
         <div className="hero-copy">
+
           <div className="eyebrow">
             <span />
             AI-POWERED TRADING ENVIRONMENT
@@ -522,165 +1558,469 @@ export default function App() {
           <h1>
             Meet the intelligence
             <br />
-            <em>behind every signal.</em>
+            <em>
+              behind every signal.
+            </em>
           </h1>
 
           <p>
-            A virtual trading floor where specialized AI analysts monitor
-            XAUUSD across multiple timeframes. Built for clarity, discipline,
-            and a smarter trading experience.
+            A virtual trading floor where
+            specialized AI analysts monitor
+            XAUUSD across multiple timeframes.
+            Watch the team move, communicate,
+            take coffee breaks and prepare for
+            each analysis session.
           </p>
 
           <div className="hero-actions">
+
             <a
               className="primary-btn"
               href={TELEGRAM_URL}
               target="_blank"
               rel="noreferrer"
             >
-              Explore Telegram <ArrowUpRight size={17} />
+              Explore Telegram
+              <ArrowUpRight size={17} />
             </a>
 
             <span className="secondary-note">
               <ShieldCheck size={16} />
               Visual office simulation
             </span>
+
           </div>
 
           <div className="mini-stats">
-            <div><b>04</b><span>AI ANALYSTS</span></div>
-            <div><b>04</b><span>TIMEFRAMES</span></div>
-            <div><b>24/5</b><span>OFFICE CYCLE*</span></div>
+
+            <div>
+              <b>05</b>
+              <span>AI ANALYSTS</span>
+            </div>
+
+            <div>
+              <b>04</b>
+              <span>TIMEFRAMES</span>
+            </div>
+
+            <div>
+              <b>24/5</b>
+              <span>OFFICE CYCLE*</span>
+            </div>
+
           </div>
+
         </div>
 
+        {/* =================================================
+            3D SCENE
+        ================================================= */}
+
         <div className="scene-wrap">
+
           <div className="scene-topline">
-            <span><Radio size={14} /> LIVE OFFICE VIEW</span>
-            <span>ASIA/JAKARTA · WIB</span>
+
+            <span>
+              <Radio size={14} />
+              LIVE OFFICE VIEW
+            </span>
+
+            <span>
+              ASIA/JAKARTA · WIB
+            </span>
+
           </div>
 
           <Canvas
             shadows
-            camera={{ position: [7, 6.2, 8.5], fov: 38 }}
-            onCreated={() => setSceneReady(true)}
+            camera={{
+              position: [
+                7.4,
+                6.4,
+                8.7
+              ],
+              fov: 38
+            }}
+            onCreated={() =>
+              setSceneReady(true)
+            }
             dpr={[1, 1.7]}
           >
+
             <OfficeScene
-              leaderMeeting={leaderMeeting}
+              mode={mode}
               selected={selected}
               setSelected={setSelected}
             />
+
           </Canvas>
 
           {!sceneReady && (
-            <div className="scene-loading">Preparing virtual office…</div>
+            <div className="scene-loading">
+              Preparing virtual office…
+            </div>
           )}
 
-          <div className="scene-hint">
-            DRAG TO ROTATE · SCROLL TO ZOOM · SELECT AN ANALYST
+          {/* mode badge */}
+
+          <div className="scene-mode-ui">
+
+            <span
+              className={
+                mode === 'analysis'
+                  ? 'green'
+                  : mode === 'briefing'
+                    ? 'gold'
+                    : ''
+              }
+            />
+
+            {mode === 'analysis' &&
+              'ANALYSIS SESSION'}
+
+            {mode === 'discussion' &&
+              'TEAM DISCUSSION'}
+
+            {mode === 'briefing' &&
+              'HOURLY BRIEFING'}
+
           </div>
+
+          <div className="scene-hint">
+            DRAG TO ROTATE · SCROLL TO ZOOM ·
+            SELECT AN ANALYST
+          </div>
+
+          {/* selected analyst */}
 
           {current && (
             <div className="analyst-card">
-              <button onClick={() => setSelected(null)} aria-label="Close">×</button>
+
+              <button
+                onClick={() =>
+                  setSelected(null)
+                }
+                aria-label="Close"
+              >
+                ×
+              </button>
+
+              <div className="analyst-card-icon">
+                <Bot size={22} />
+              </div>
+
               <b>{current.name}</b>
-              <span>XAUUSD · {current.tf}</span>
-              <small>{current.task}</small>
-              <label><i /> SIMULATED ACTIVITY</label>
+
+              <span>
+                XAUUSD · {current.tf}
+              </span>
+
+              <small>
+                {current.task}
+              </small>
+
+              <label>
+                <i />
+                SIMULATED ACTIVITY
+              </label>
+
             </div>
           )}
+
+          {/* briefing toast */}
 
           {toast && (
             <div className="dispatch-toast">
+
               <span className="live-dot" />
+
               LEADER MEETING · VISUAL EVENT
+
             </div>
           )}
+
         </div>
+
       </section>
 
+      {/* =================================================
+          WORKSPACE
+      ================================================= */}
+
       <section className="workspace">
+
         <div className="section-heading">
+
           <div>
-            <span className="eyebrow">THE TRADING FLOOR</span>
-            <h2>One team. Multiple perspectives.</h2>
+
+            <span className="eyebrow">
+              THE TRADING FLOOR
+            </span>
+
+            <h2>
+              One team. Multiple perspectives.
+            </h2>
+
           </div>
+
           <p>
-            Each workstation represents a dedicated timeframe role.
-            Activity and dialogue are simulated for the website experience.
+            Each workstation represents a
+            dedicated intelligence role.
+            Office movement and dialogue are
+            simulated for the website experience.
           </p>
+
         </div>
 
         <div className="team-grid">
+
           {TEAM.map(a => (
+
             <article
               className="team-card"
               key={a.id}
-              onClick={() => setSelected(a.id)}
+              onClick={() =>
+                setSelected(a.id)
+              }
             >
+
               <div className="team-card-top">
-                <span className="avatar"><Bot size={22} /></span>
-                <span className="tf-pill">{a.tf}</span>
+
+                <span className="avatar">
+                  {a.id === 'fundamental'
+                    ? <BarChart3 size={22} />
+                    : <Bot size={22} />
+                  }
+                </span>
+
+                <span className="tf-pill">
+                  {a.tf}
+                </span>
+
               </div>
-              <h3>{a.name}</h3>
-              <p>{a.task}</p>
+
+              <h3>
+                {a.name}
+              </h3>
+
+              <p>
+                {a.task}
+              </p>
+
               <div className="card-status">
-                <i /> At workstation <span>·</span> XAUUSD
+                <i />
+                At workstation
+                <span>·</span>
+                XAUUSD
               </div>
+
             </article>
+
           ))}
+
         </div>
+
       </section>
 
-      <section className="activity-section">
-        <div className="activity-head">
+      {/* =================================================
+          OFFICE STATUS
+      ================================================= */}
+
+      <section className="status-section">
+
+        <div className="status-card">
+
+          <Activity size={18} />
+
           <div>
-            <span className="eyebrow">TEAM COMMS</span>
-            <h2>Inside the office</h2>
+            <b>
+              Current office activity
+            </b>
+
+            <span>
+              {mode === 'analysis' &&
+                'Analysts are seated and monitoring their workstations.'}
+
+              {mode === 'discussion' &&
+                'Team members are moving around and discussing the market.'}
+
+              {mode === 'briefing' &&
+                'The team leader is conducting the hourly briefing.'}
+            </span>
           </div>
-          <span className="live-label"><i /> SIMULATED LIVE FEED</span>
+
+        </div>
+
+        <div className="status-card">
+
+          <Users size={18} />
+
+          <div>
+            <b>
+              Team status
+            </b>
+
+            <span>
+              5 analysts · 1 team leader
+            </span>
+          </div>
+
+        </div>
+
+        <div className="status-card">
+
+          <Coffee size={18} />
+
+          <div>
+            <b>
+              Coffee station
+            </b>
+
+            <span>
+              Always available for the team
+            </span>
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* =================================================
+          TEAM COMMS
+      ================================================= */}
+
+      <section className="activity-section">
+
+        <div className="activity-head">
+
+          <div>
+
+            <span className="eyebrow">
+              TEAM COMMS
+            </span>
+
+            <h2>
+              Inside the office
+            </h2>
+
+          </div>
+
+          <span className="live-label">
+            <i />
+            SIMULATED LIVE FEED
+          </span>
+
         </div>
 
         <div className="chat-panel">
-          <div className="chat-avatar"><MessageSquare size={19} /></div>
+
+          <div className="chat-avatar">
+            <MessageSquare size={19} />
+          </div>
 
           <div className="chat-body">
+
             <div>
-              <b>{CHAT_LINES[chatIndex][0]}</b>
-              <time>{clock.time} WIB</time>
+
+              <b>
+                {CHAT_LINES[chatIndex][0]}
+              </b>
+
+              <time>
+                {clock.time} WIB
+              </time>
+
             </div>
-            <p key={chatIndex}>{CHAT_LINES[chatIndex][1]}</p>
+
+            <p key={chatIndex}>
+              {CHAT_LINES[chatIndex][1]}
+            </p>
+
           </div>
 
-          <span className="typing"><i /><i /><i /></span>
+          <span className="typing">
+
+            <i />
+            <i />
+            <i />
+
+          </span>
+
         </div>
+
+        {/* =================================================
+            SCHEDULE
+        ================================================= */}
 
         <div className="schedule-note">
+
           <Clock3 size={17} />
+
           <div>
-            <b>Hourly visual briefing</b>
-            <span>Weekdays · 07:00–02:00 WIB · At minute 00</span>
+
+            <b>
+              Automated office cycle
+            </b>
+
+            <span>
+              00:00 briefing ·
+              00:01–00:29 discussion ·
+              00:30 analysis session
+            </span>
+
           </div>
-          <span className="schedule-tag">AUTOMATED</span>
+
+          <span className="schedule-tag">
+            WIB
+          </span>
+
         </div>
+
       </section>
 
+      {/* =================================================
+          FOOTER
+      ================================================= */}
+
       <footer>
-        <a className="brand footer-brand" href="#">
-          <span className="brand-mark">Au</span>
-          <span>
-            <b>XAU AI SMC GOLD</b>
-            <small>TRADING INTELLIGENCE OFFICE</small>
+
+        <a
+          className="brand footer-brand"
+          href="#"
+        >
+
+          <span className="brand-mark">
+            Au
           </span>
+
+          <span>
+
+            <b>
+              XAU AI SMC GOLD
+            </b>
+
+            <small>
+              TRADING INTELLIGENCE OFFICE
+            </small>
+
+          </span>
+
         </a>
 
-        <p>© {new Date().getFullYear()} XAU AI. Virtual office experience.</p>
+        <p>
+          © {new Date().getFullYear()}
+          {' '}
+          XAU AI. Virtual office experience.
+        </p>
 
         <span className="footer-disclaimer">
-          Website visuals are simulated. Trading analysis and signals are provided separately.
+          Website visuals are simulated.
+          Trading analysis and signals are
+          provided separately.
         </span>
+
       </footer>
+
     </main>
   )
 }
