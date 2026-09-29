@@ -13,22 +13,38 @@ const PROMO_END = new Date("2026-09-30T23:59:59+07:00").getTime();
 // "code" dikirim ke bot sebagai perintah /start <code>. Sesuaikan dengan bot Anda.
 const PLANS = [
   { code: "1bulan", label: "1 Bulan", price: "Rp 299.000" },
-  { code: "6bulan", label: "6 Bulan", price: "Rp 500.000" },
-  { code: "12bulan", label: "12 Bulan", price: "Rp 850.000" },
-  { code: "3tahun", label: "3 Tahun", price: "Rp 999.000", promo: true },
+  { code: "6bulan", label: "6 Bulan", price: "Rp 500.000", group: true },
+  { code: "12bulan", label: "12 Bulan", price: "Rp 850.000", group: true },
+  { code: "3tahun", label: "3 Tahun", price: "Rp 999.000", promo: true, group: true },
 ];
 
 const TEAM = [
   { id: 0, name: "M30 Macro", role: "Analis Makro", tf: "M30", color: "#58a6ff", shirt: "#173d69",
-    speech: ["Cek struktur besar dulu.", "M30 mulai terlihat menarik.", "Saya pantau area utama.", "Tunggu briefing leader."] },
+    speech: ["Cek struktur besar dulu.", "Tren utama di M30 masih terjaga.", "Area supply dan demand sudah saya tandai.", "Bias makro hari ini sedang saya validasi.", "Level kunci H4 menjadi acuan tim.", "Belum ada perubahan struktur yang signifikan.", "Saya pantau area utama.", "Laporan makro siap untuk briefing leader."] },
   { id: 1, name: "M15 SMC", role: "Analis SMC", tf: "M15", color: "#b57aff", shirt: "#4c2374",
-    speech: ["Saya cek market structure.", "Perhatikan area liquidity.", "M15 sedang saya pantau.", "Tunggu konfirmasi berikutnya."] },
+    speech: ["Saya cek market structure.", "Perhatikan area liquidity di atas dan bawah.", "Menunggu konfirmasi BOS atau CHoCH.", "Order block M15 sudah saya petakan.", "Ada potensi liquidity sweep di area ini.", "Fair value gap masih terbuka, saya pantau.", "Struktur M15 selaras dengan bias makro.", "Tunggu konfirmasi berikutnya."] },
   { id: 2, name: "M5 Entry", role: "Analis Entry", tf: "M5", color: "#f4c95d", shirt: "#6c4c12",
-    speech: ["Saya cek area entry.", "Pantau retest dulu.", "Entry zone sedang dipantau.", "Jangan terburu-buru."] },
+    speech: ["Saya cek area entry.", "Menunggu retest sebelum masuk.", "Zona entry sedang dipantau dengan ketat.", "Risk dan reward harus tetap terukur.", "Konfirmasi candle belum lengkap.", "Level stop loss sudah saya hitung.", "Kesabaran adalah kunci entry yang presisi.", "Jangan terburu-buru."] },
   { id: 3, name: "M1 Execution", role: "Analis Eksekusi", tf: "M1", color: "#55d98b", shirt: "#185b3a",
-    speech: ["M1 bergerak cepat.", "Saya pantau pergerakan terakhir.", "Eksekusi siap.", "Tunggu instruksi leader."] },
+    speech: ["M1 bergerak cepat.", "Momentum jangka pendek sedang saya baca.", "Spread dan likuiditas dalam kondisi normal.", "Eksekusi siap, menunggu aba-aba.", "Saya pantau pergerakan harga terakhir.", "Volatilitas meningkat, tetap waspada.", "Konfirmasi presisi di M1 sudah saya siapkan.", "Tunggu instruksi leader."] },
   { id: 4, name: "Fundamental", role: "Analis Fundamental", tf: "FUND", color: "#ff9f68", shirt: "#71331f",
-    speech: ["Saya cek agenda fundamental.", "Pantau berita hari ini.", "Saya review faktor ekonomi.", "Fundamental siap."] },
+    speech: ["Saya cek agenda fundamental.", "Kalender ekonomi hari ini sedang direview.", "Data USD dan yield obligasi ikut saya pantau.", "Sentimen dolar berpengaruh pada arah emas.", "Rilis berita berdampak tinggi perlu diwaspadai.", "Kebijakan bank sentral menjadi fokus utama.", "Saya review faktor ekonomi global.", "Fundamental siap dilaporkan ke leader."] },
+];
+
+const LEADER_BRIEFING = [
+  "KIRIM SIGNAL KE TELEGRAM SEKARANG!",
+  "Semua analis, laporkan hasil analisa Anda.",
+  "Pastikan signal akurat dan terkonfirmasi.",
+];
+const LEADER_SOCIAL = [
+  "Semua tetap standby.",
+  "Disiplin dan manajemen risiko adalah prioritas.",
+  "Pantau terus setiap perkembangan market.",
+  "Jangan ada signal tanpa konfirmasi.",
+  "Koordinasi antar timeframe harus selaras.",
+  "Kualitas signal lebih penting daripada kuantitas.",
+  "Tetap fokus, briefing berikutnya segera dimulai.",
+  "Kerja bagus, tim. Pertahankan ketelitian.",
 ];
 
 const LEADER = { id: "leader", name: "AI LEADER", role: "Koordinator Signal", tf: "MASTER", color: "#e7c26a" };
@@ -59,6 +75,7 @@ button,a{font:inherit}
 .plan-price{margin:6px 0 4px;font-size:22px;font-weight:900}
 .plan-desc{margin-bottom:10px;color:#7e8992;font-size:10px;line-height:1.5}
 .plan-badge{display:inline-block;margin-bottom:8px;padding:3px 8px;border-radius:6px;background:#e6bd62;color:#1b1405;font-size:9px;font-weight:900;letter-spacing:.08em}
+.plan-perk{margin-bottom:10px;color:#79e0a1;font-size:11px;font-weight:700}
 .plan-timer{margin-bottom:8px;color:#f0d184;font-size:11px;font-weight:700}
 .cta{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:0 17px;border:1px solid rgba(230,189,98,.3);border-radius:12px;color:#f8efd9;text-decoration:none;background:rgba(230,189,98,.1);transition:.2s}
 .cta:hover{transform:translateY(-2px);background:rgba(230,189,98,.18);border-color:rgba(230,189,98,.5)}
@@ -497,7 +514,7 @@ function OfficeScene({ clock, selectedPerson, setSelectedPerson }) {
           color="#e7c26a"
           shirt="#8b6928"
           talking={leaderTalking}
-          speech={briefing ? "KIRIM SIGNAL KE TELEGRAM SEKARANG!" : "Semua tetap standby."}
+          speech={briefing ? LEADER_BRIEFING[Math.floor(clock.second / 6) % LEADER_BRIEFING.length] : LEADER_SOCIAL[Math.floor(sec / 20) % LEADER_SOCIAL.length]}
           sitting={false}
           coffee={false}
           selected={selectedPerson?.id === "leader"}
@@ -564,7 +581,7 @@ export default function App() {
           <div className="eyebrow"><Radio size={12} />LIVE OFFICE AI ASSISTANT GOLD</div>
 
           <h1>
-            Di dalam Kantor <span className="gold-text">XAU AI SMC</span>
+            TEAM ANALYST   <span className="gold-text">XAU AI SMC</span>
           </h1>
 
           <p className="hero-copy">
@@ -580,6 +597,7 @@ export default function App() {
                 <div className="plan-label">{plan.label}</div>
                 <div className="plan-price">{plan.price}</div>
                 <div className="plan-desc">Akses AI Trading Assistant Signal XAUUSD &amp; Fundamental</div>
+                {plan.group && <div className="plan-perk">✓ Undangan ke grup DISKUSI</div>}
                 {plan.promo && (
                   <div className="plan-timer">
                     {promo.ended ? "Promo telah berakhir" : `Sisa waktu promo: ${promo.text}`}
