@@ -1,3610 +1,2097 @@
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react'
-
-import { Canvas, useFrame } from '@react-three/fiber'
-
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Html,
   OrbitControls,
-  ContactShadows
-} from '@react-three/drei'
-
-import * as THREE from 'three'
-
+  ContactShadows,
+} from "@react-three/drei";
+import * as THREE from "three";
 import {
   ArrowUpRight,
   Bot,
   Clock3,
-  Coffee,
   MessageSquare,
   Radio,
   ShieldCheck,
-  Activity,
+  Coffee,
   Users,
-  BarChart3
-} from 'lucide-react'
-
-
-/* =========================================================
-   CONFIG
-========================================================= */
-
-const TELEGRAM_URL = 'https://t.me/'
-
+  Monitor,
+} from "lucide-react";
 
 /* =========================================================
-   TEAM
-========================================================= */
+   XAU AI SMC GOLD
+   VISUAL OFFICE SIMULATION
+   ---------------------------------------------------------
+   - Tidak melakukan analisa market sungguhan
+   - Tidak mengirim signal sungguhan
+   - Hanya visual/landing page
+   ========================================================= */
+
+const TELEGRAM_URL = "https://t.me/";
 
 const TEAM = [
   {
-    id: 'm30',
-    name: 'Macro Analyst',
-    tf: 'M30',
-    color: '#68b8ff',
-    task: 'Higher timeframe observation'
+    id: 0,
+    name: "M30 Macro",
+    role: "Macro Analyst",
+    tf: "M30",
+    color: "#58a6ff",
+    shirt: "#173d69",
+    speech: [
+      "Cek struktur besar dulu.",
+      "M30 mulai terlihat menarik.",
+      "Saya pantau area utama.",
+      "Tunggu briefing leader.",
+    ],
   },
-
   {
-    id: 'm15',
-    name: 'SMC Analyst',
-    tf: 'M15',
-    color: '#b49aff',
-    task: 'Market structure monitoring'
+    id: 1,
+    name: "M15 SMC",
+    role: "SMC Analyst",
+    tf: "M15",
+    color: "#b57aff",
+    shirt: "#4c2374",
+    speech: [
+      "Saya cek market structure.",
+      "Perhatikan liquidity area.",
+      "M15 sedang saya pantau.",
+      "Tunggu konfirmasi berikutnya.",
+    ],
   },
-
   {
-    id: 'm5',
-    name: 'Entry Analyst',
-    tf: 'M5',
-    color: '#f0bd68',
-    task: 'Entry zone observation'
+    id: 2,
+    name: "M5 Entry",
+    role: "Entry Analyst",
+    tf: "M5",
+    color: "#f4c95d",
+    shirt: "#6c4c12",
+    speech: [
+      "Saya cek area entry.",
+      "Pantau retest dulu.",
+      "Entry zone sedang dipantau.",
+      "Jangan terburu-buru.",
+    ],
   },
-
   {
-    id: 'm1',
-    name: 'Execution Analyst',
-    tf: 'M1',
-    color: '#67d6b0',
-    task: 'Short-term price monitoring'
+    id: 3,
+    name: "M1 Execution",
+    role: "Execution Analyst",
+    tf: "M1",
+    color: "#55d98b",
+    shirt: "#185b3a",
+    speech: [
+      "M1 bergerak cepat.",
+      "Saya pantau pergerakan terakhir.",
+      "Execution siap.",
+      "Tunggu instruksi leader.",
+    ],
   },
-
   {
-    id: 'fundamental',
-    name: 'Fundamental Analyst',
-    tf: 'NEWS',
-    color: '#ff8f8f',
-    task: 'Macro & fundamental monitoring'
-  }
-]
-
-
-/* =========================================================
-   CHAT
-========================================================= */
+    id: 4,
+    name: "Fundamental",
+    role: "Fundamental Analyst",
+    tf: "FUND",
+    color: "#ff9f68",
+    shirt: "#71331f",
+    speech: [
+      "Saya cek agenda fundamental.",
+      "Pantau news hari ini.",
+      "Saya review faktor ekonomi.",
+      "Fundamental siap.",
+    ],
+  },
+];
 
 const CHAT_LINES = [
-  {
-    person: 'm30',
-    text: 'Market looks quiet right now.'
-  },
+  "M30: struktur besar masih dipantau.",
+  "M15: liquidity area sedang diperhatikan.",
+  "M5: entry zone belum final.",
+  "M1: price movement masih cepat.",
+  "Fundamental: agenda ekonomi sedang dicek.",
+  "Leader: semua tetap standby.",
+];
 
-  {
-    person: 'm15',
-    text: 'Anyone wants coffee?'
-  },
-
-  {
-    person: 'fundamental',
-    text: 'I am checking the macro calendar.'
-  },
-
-  {
-    person: 'm5',
-    text: 'I will grab a coffee first.'
-  },
-
-  {
-    person: 'm1',
-    text: 'Charts are moving slowly.'
-  },
-
-  {
-    person: 'leader',
-    text: 'Team, keep the floor ready.'
-  },
-
-  {
-    person: 'm30',
-    text: 'Everything is ready here.'
-  },
-
-  {
-    person: 'fundamental',
-    text: 'Nothing major on the calendar yet.'
-  },
-
-  {
-    person: 'm15',
-    text: 'We start analysis at minute 30.'
-  },
-
-  {
-    person: 'm5',
-    text: 'Coffee acquired.'
-  },
-
-  {
-    person: 'm1',
-    text: 'I am heading back to my desk.'
+const GLOBAL_CSS = `
+  * {
+    box-sizing: border-box;
   }
-]
 
+  html,
+  body,
+  #root {
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+    background: #05070a;
+    color: #f4f1e8;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  button,
+  a {
+    font: inherit;
+  }
+
+  .xau-app {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(199, 153, 54, .12), transparent 35%),
+      linear-gradient(180deg, #06080c 0%, #090b0f 55%, #050608 100%);
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 28px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(5,7,10,.84);
+    backdrop-filter: blur(18px);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(238,190,78,.35);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #e9c46a;
+    background: rgba(218,169,55,.08);
+    box-shadow: 0 0 30px rgba(218,169,55,.08);
+  }
+
+  .brand-title {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .16em;
+  }
+
+  .brand-sub {
+    margin-top: 2px;
+    font-size: 10px;
+    color: #777e88;
+    letter-spacing: .12em;
+  }
+
+  .online {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #79e0a1;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+
+  .online-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #65e49a;
+    box-shadow: 0 0 14px #65e49a;
+  }
+
+  .hero {
+    width: min(1220px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 72px 0 38px;
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 48px;
+    align-items: end;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 11px;
+    border: 1px solid rgba(231,190,93,.18);
+    border-radius: 999px;
+    color: #d6b76b;
+    background: rgba(216,170,62,.055);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .14em;
+  }
+
+  .hero h1 {
+    margin: 18px 0 14px;
+    max-width: 800px;
+    font-size: clamp(42px, 6vw, 82px);
+    line-height: .94;
+    letter-spacing: -.055em;
+    font-weight: 900;
+  }
+
+  .gold-text {
+    color: #e6bd62;
+    text-shadow: 0 0 32px rgba(230,189,98,.15);
+  }
+
+  .hero-copy {
+    max-width: 650px;
+    color: #9097a1;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 0 17px;
+    border-radius: 12px;
+    border: 1px solid rgba(230,189,98,.24);
+    color: #f8efd9;
+    text-decoration: none;
+    background: rgba(230,189,98,.09);
+    transition: .2s ease;
+  }
+
+  .cta:hover {
+    transform: translateY(-2px);
+    background: rgba(230,189,98,.15);
+    border-color: rgba(230,189,98,.45);
+  }
+
+  .cta.secondary {
+    color: #a9afb8;
+    border-color: rgba(255,255,255,.09);
+    background: rgba(255,255,255,.03);
+  }
+
+  .hero-panel {
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 20px;
+    padding: 18px;
+    background:
+      linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.015));
+    box-shadow: 0 30px 90px rgba(0,0,0,.24);
+  }
+
+  .clock-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+
+  .clock-label {
+    color: #707782;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+  }
+
+  .clock-value {
+    margin-top: 4px;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -.03em;
+  }
+
+  .clock-zone {
+    color: #d1af5c;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .system-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+  }
+
+  .system-stat {
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 13px;
+    background: rgba(0,0,0,.15);
+  }
+
+  .system-stat strong {
+    display: block;
+    font-size: 18px;
+  }
+
+  .system-stat span {
+    color: #666d77;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  .scene-wrap {
+    width: min(1320px, calc(100% - 28px));
+    margin: 0 auto;
+    position: relative;
+    height: min(720px, 70vw);
+    min-height: 560px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 24px;
+    overflow: hidden;
+    background: #080a0d;
+    box-shadow:
+      0 40px 120px rgba(0,0,0,.35),
+      inset 0 0 100px rgba(0,0,0,.35);
+  }
+
+  .scene-label {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    z-index: 10;
+    padding: 9px 12px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    background: rgba(4,6,8,.74);
+    backdrop-filter: blur(12px);
+    color: #858b94;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .scene-label strong {
+    color: #e7c269;
+  }
+
+  .briefing-alert {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    padding: 10px 17px;
+    border: 1px solid rgba(231,190,93,.38);
+    border-radius: 999px;
+    color: #f0d184;
+    background: rgba(44,31,7,.8);
+    box-shadow: 0 0 40px rgba(224,171,57,.12);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .speech-bubble {
+    min-width: 130px;
+    max-width: 190px;
+    padding: 9px 12px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 12px;
+    color: #f2f2ee;
+    background: rgba(8,10,14,.92);
+    box-shadow: 0 12px 30px rgba(0,0,0,.32);
+    font-size: 10px;
+    line-height: 1.35;
+    text-align: center;
+    white-space: normal;
+    backdrop-filter: blur(12px);
+  }
+
+  .speech-bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 10px;
+    height: 10px;
+    transform: translateX(-50%) rotate(45deg);
+    border-right: 1px solid rgba(255,255,255,.13);
+    border-bottom: 1px solid rgba(255,255,255,.13);
+    background: rgba(8,10,14,.92);
+  }
+
+  .leader-bubble {
+    min-width: 260px;
+    max-width: 360px;
+    border-color: rgba(234,191,91,.38);
+    color: #f6d883;
+    background: rgba(28,22,10,.96);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: .06em;
+  }
+
+  .wall-logo {
+    width: 310px;
+    padding: 15px 25px;
+    border: 1px solid rgba(232,188,88,.16);
+    background: rgba(8,10,12,.58);
+    color: #e5bd61;
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: .18em;
+    text-align: center;
+    text-shadow: 0 0 22px rgba(228,185,81,.25);
+    box-shadow: 0 0 30px rgba(214,165,56,.06);
+  }
+
+  .wall-logo small {
+    display: block;
+    margin-top: 6px;
+    color: #737984;
+    font-size: 7px;
+    letter-spacing: .27em;
+  }
+
+  .below-scene {
+    width: min(1220px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 46px 0 20px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .section-kicker {
+    color: #d0aa58;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+
+  .section-title {
+    margin: 7px 0 0;
+    font-size: 28px;
+    letter-spacing: -.03em;
+  }
+
+  .section-copy {
+    max-width: 490px;
+    color: #727983;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  .team-card {
+    min-height: 145px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.012));
+  }
+
+  .team-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .role-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    box-shadow: 0 0 15px currentColor;
+  }
+
+  .team-tf {
+    padding: 4px 7px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.05);
+    color: #858b95;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .08em;
+  }
+
+  .team-card h3 {
+    margin: 18px 0 5px;
+    font-size: 13px;
+  }
+
+  .team-card p {
+    margin: 0;
+    color: #6f7680;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .activity {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .activity-card {
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 17px;
+    background: rgba(255,255,255,.025);
+  }
+
+  .activity-icon {
+    width: 35px;
+    height: 35px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: #e4bd65;
+    background: rgba(225,184,87,.08);
+  }
+
+  .activity-card h3 {
+    margin: 15px 0 7px;
+    font-size: 14px;
+  }
+
+  .activity-card p {
+    margin: 0;
+    color: #727983;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .footer {
+    width: min(1220px, calc(100% - 40px));
+    margin: 50px auto 0;
+    padding: 24px 0 35px;
+    border-top: 1px solid rgba(255,255,255,.07);
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    color: #5f6670;
+    font-size: 10px;
+  }
+
+  @media (max-width: 1050px) {
+    .hero {
+      grid-template-columns: 1fr;
+      padding-top: 45px;
+    }
+
+    .team-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 700px) {
+    .topbar {
+      padding: 12px 15px;
+    }
+
+    .brand-sub {
+      display: none;
+    }
+
+    .hero,
+    .below-scene,
+    .footer {
+      width: calc(100% - 26px);
+    }
+
+    .hero h1 {
+      font-size: 48px;
+    }
+
+    .scene-wrap {
+      width: calc(100% - 16px);
+      height: 560px;
+      min-height: 560px;
+      border-radius: 18px;
+    }
+
+    .system-row {
+      grid-template-columns: 1fr;
+    }
+
+    .team-grid,
+    .activity {
+      grid-template-columns: 1fr;
+    }
+
+    .footer {
+      flex-direction: column;
+    }
+
+    .wall-logo {
+      width: 250px;
+      font-size: 15px;
+    }
+
+    .briefing-alert {
+      font-size: 8px;
+    }
+  }
+`;
 
 /* =========================================================
    CLOCK
-========================================================= */
+   ========================================================= */
 
 function useJakartaClock() {
-
-  const [now, setNow] = useState(
-    new Date()
-  )
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
 
-    const id = setInterval(() => {
-      setNow(new Date())
-    }, 1000)
+    return () => clearInterval(timer);
+  }, []);
 
-    return () => clearInterval(id)
+  return useMemo(() => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Jakarta",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).formatToParts(now);
 
-  }, [])
+    const get = (type) =>
+      parts.find((item) => item.type === type)?.value || "";
 
-
-  const parts =
-    new Intl.DateTimeFormat(
-      'en-GB',
-      {
-        timeZone: 'Asia/Jakarta',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        weekday: 'short',
-        hour12: false
-      }
-    ).formatToParts(now)
-
-
-  const get = type =>
-    parts.find(
-      p => p.type === type
-    )?.value
-
-
-  return {
-
-    hour: Number(get('hour')),
-
-    minute: Number(get('minute')),
-
-    second: Number(get('second')),
-
-    weekday: get('weekday'),
-
-    time:
-      `${get('hour')}:${get('minute')}:${get('second')}`
-  }
+    return {
+      hour: Number(get("hour")),
+      minute: Number(get("minute")),
+      second: Number(get("second")),
+      weekday: get("weekday"),
+      day: get("day"),
+      month: get("month"),
+      year: get("year"),
+    };
+  }, [now]);
 }
 
-
 /* =========================================================
-   OFFICE MODE
-========================================================= */
+   MOVING CHART
+   ========================================================= */
 
-function getOfficeMode(clock) {
+function MovingChart({ color = "#e6bd62", seed = 1 }) {
+  const lineRef = useRef(null);
 
-  if (clock.minute === 0) {
-    return 'briefing'
-  }
+  const POINTS = 46;
 
-  if (clock.minute >= 30) {
-    return 'analysis'
-  }
+  const positions = useMemo(
+    () => new Float32Array(POINTS * 3),
+    []
+  );
 
-  return 'discussion'
-}
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
 
+    for (let i = 0; i < POINTS; i++) {
+      const x = -0.82 + (i / (POINTS - 1)) * 1.64;
 
-/* =========================================================
-   CHART
-========================================================= */
+      const wave =
+        Math.sin(t * 1.25 + i * 0.36 + seed) * 0.08 +
+        Math.sin(t * 0.55 + i * 0.16 + seed * 2) * 0.055 +
+        Math.sin(i * 0.7 + seed) * 0.045;
 
-function AnimatedChart({
-  tf,
-  color,
-  working
-}) {
+      const trend = (i / POINTS) * 0.18;
 
-  const [tick, setTick] =
-    useState(0)
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = wave + trend;
+      positions[i * 3 + 2] = 0.045;
+    }
 
-
-  useEffect(() => {
-
-    const id = setInterval(() => {
-
-      setTick(v => v + 1)
-
-    }, 550)
-
-    return () => clearInterval(id)
-
-  }, [])
-
-
-  const candles = useMemo(() => {
-
-    let price = 0
-
-    return Array.from(
-      { length: 22 },
-      (_, i) => {
-
-        const move =
-          Math.sin(
-            i * 1.4 +
-            tick * 0.07 +
-            tf.length
-          ) * 0.065 +
-
-          Math.cos(
-            i * 0.61 +
-            tick * 0.03
-          ) * 0.045
-
-
-        const open = price
-
-        const close =
-          price +
-          move +
-          (i % 4 === 0
-            ? 0.035
-            : -0.012)
-
-
-        const high =
-          Math.max(open, close) +
-          0.045
-
-
-        const low =
-          Math.min(open, close) -
-          0.045
-
-
-        price = close
-
-
-        return {
-          open,
-          close,
-          high,
-          low
-        }
-      }
-    )
-
-  }, [tick, tf])
-
+    if (lineRef.current) {
+      lineRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+  });
 
   return (
-
-    <group>
-
-      <mesh>
-
-        <boxGeometry
-          args={[
-            1.28,
-            0.80,
-            0.08
-          ]}
+    <line ref={lineRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          array={positions}
+          count={POINTS}
+          itemSize={3}
         />
+      </bufferGeometry>
 
-        <meshStandardMaterial
-          color="#07131f"
-          roughness={0.45}
-        />
-
-      </mesh>
-
-
-      <mesh
-        position={[
-          0,
-          0,
-          0.045
-        ]}
-      >
-
-        <planeGeometry
-          args={[
-            1.17,
-            0.68
-          ]}
-        />
-
-        <meshBasicMaterial
-          color="#091725"
-        />
-
-      </mesh>
-
-
-      {/* GRID */}
-
-      {Array.from(
-        { length: 5 },
-        (_, i) => (
-
-          <mesh
-            key={`h${i}`}
-            position={[
-              0,
-              -0.27 +
-              i * 0.135,
-              0.052
-            ]}
-          >
-
-            <planeGeometry
-              args={[
-                1.12,
-                0.003
-              ]}
-            />
-
-            <meshBasicMaterial
-              color="#203649"
-            />
-
-          </mesh>
-
-        )
-      )}
-
-
-      {Array.from(
-        { length: 7 },
-        (_, i) => (
-
-          <mesh
-            key={`v${i}`}
-            position={[
-              -0.51 +
-              i * 0.17,
-              0,
-              0.052
-            ]}
-          >
-
-            <planeGeometry
-              args={[
-                0.003,
-                0.66
-              ]}
-            />
-
-            <meshBasicMaterial
-              color="#1c3042"
-            />
-
-          </mesh>
-
-        )
-      )}
-
-
-      {/* CANDLES */}
-
-      {candles.map(
-        (c, i) => {
-
-          const x =
-            -0.49 +
-            i * 0.046
-
-
-          const scale = 1.3
-
-          const open =
-            c.open * scale
-
-          const close =
-            c.close * scale
-
-          const high =
-            c.high * scale
-
-          const low =
-            c.low * scale
-
-
-          const bullish =
-            c.close >= c.open
-
-
-          const body =
-            Math.max(
-              Math.abs(
-                close - open
-              ),
-              0.024
-            )
-
-
-          return (
-
-            <group key={i}>
-
-              <mesh
-                position={[
-                  x,
-                  (high + low) / 2,
-                  0.062
-                ]}
-              >
-
-                <boxGeometry
-                  args={[
-                    0.007,
-                    Math.max(
-                      high - low,
-                      0.025
-                    ),
-                    0.008
-                  ]}
-                />
-
-                <meshBasicMaterial
-                  color={
-                    bullish
-                      ? '#59d39f'
-                      : '#e86f73'
-                  }
-                />
-
-              </mesh>
-
-
-              <mesh
-                position={[
-                  x,
-                  (open + close) / 2,
-                  0.067
-                ]}
-              >
-
-                <boxGeometry
-                  args={[
-                    0.034,
-                    body,
-                    0.025
-                  ]}
-                />
-
-                <meshBasicMaterial
-                  color={
-                    bullish
-                      ? '#59d39f'
-                      : '#e86f73'
-                  }
-                />
-
-              </mesh>
-
-            </group>
-          )
-        }
-      )}
-
-
-      {/* PRICE LINE */}
-
-      <mesh
-        position={[
-          0.38,
-          0.18,
-          0.075
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.18,
-            0.012,
-            0.012
-          ]}
-        />
-
-        <meshBasicMaterial
-          color={color}
-        />
-
-      </mesh>
-
-
-      <Html
-        position={[
-          0,
-          0.30,
-          0.08
-        ]}
-        transform
-        distanceFactor={5}
-        center
-      >
-
-        <div className="screen-label">
-
-          <b>XAUUSD</b>
-
-          <span>{tf}</span>
-
-        </div>
-
-      </Html>
-
-
-      <Html
-        position={[
-          0.38,
-          -0.29,
-          0.08
-        ]}
-        transform
-        distanceFactor={5}
-        center
-      >
-
-        <div className="screen-price">
-          {working
-            ? 'LIVE SIM'
-            : 'STANDBY'}
-        </div>
-
-      </Html>
-
-    </group>
-  )
-}
-
-
-/* =========================================================
-   COMPUTER
-========================================================= */
-
-function Computer({
-  tf,
-  color,
-  working
-}) {
-
-  return (
-
-    <group>
-
-      <group
-        position={[
-          0,
-          1.48,
-          -0.17
-        ]}
-      >
-
-        <AnimatedChart
-          tf={tf}
-          color={color}
-          working={working}
-        />
-
-
-        <mesh
-          position={[
-            0,
-            -0.50,
-            0
-          ]}
-        >
-
-          <boxGeometry
-            args={[
-              0.13,
-              0.10,
-              0.13
-            ]}
-          />
-
-          <meshStandardMaterial
-            color="#aab7c0"
-          />
-
-        </mesh>
-
-
-        <mesh
-          position={[
-            0,
-            -0.56,
-            0
-          ]}
-        >
-
-          <boxGeometry
-            args={[
-              0.48,
-              0.035,
-              0.25
-            ]}
-          />
-
-          <meshStandardMaterial
-            color="#7d8a94"
-          />
-
-        </mesh>
-
-      </group>
-
-
-      {/* keyboard */}
-
-      <mesh
-        position={[
-          0.34,
-          0.94,
-          0.24
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.42,
-            0.025,
-            0.18
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#d9dedf"
-        />
-
-      </mesh>
-
-
-      {/* mouse */}
-
-      <mesh
-        position={[
-          0.61,
-          0.95,
-          0.23
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.12,
-            0.025,
-            0.09
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#9da8ad"
-        />
-
-      </mesh>
-
-
-      {/* lamp */}
-
-      <mesh
-        position={[
-          -0.39,
-          0.99,
-          0.21
-        ]}
-      >
-
-        <cylinderGeometry
-          args={[
-            0.045,
-            0.055,
-            0.16,
-            10
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#b9c2c4"
-        />
-
-      </mesh>
-
-    </group>
-  )
-}
-
-
-/* =========================================================
-   DESK
-========================================================= */
-
-function Desk({
-  position,
-  tf,
-  color,
-  selected,
-  working,
-  onSelect
-}) {
-
-  return (
-
-    <group
-      position={position}
-      onClick={onSelect}
-    >
-
-      {/* TABLE */}
-
-      <mesh
-        position={[
-          0,
-          0.72,
-          0
-        ]}
-        castShadow
-      >
-
-        <boxGeometry
-          args={[
-            1.60,
-            0.12,
-            0.85
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#c3aa7d"
-          roughness={0.72}
-        />
-
-      </mesh>
-
-
-      {/* LEGS */}
-
-      {[
-        [-0.68, 0.34, -0.29],
-        [0.68, 0.34, -0.29],
-        [-0.68, 0.34, 0.29],
-        [0.68, 0.34, 0.29]
-      ].map(
-        (p, i) => (
-
-          <mesh
-            key={i}
-            position={p}
-          >
-
-            <boxGeometry
-              args={[
-                0.08,
-                0.68,
-                0.08
-              ]}
-            />
-
-            <meshStandardMaterial
-              color="#756653"
-            />
-
-          </mesh>
-
-        )
-      )}
-
-
-      {/* COMPUTER */}
-
-      <Computer
-        tf={tf}
+      <lineBasicMaterial
         color={color}
-        working={working}
+        transparent
+        opacity={0.95}
       />
+    </line>
+  );
+}
 
+/* =========================================================
+   COMPUTER SCREEN
+   ========================================================= */
 
-      {/* PC TOWER */}
-
-      <mesh
-        position={[
-          0.60,
-          0.95,
-          -0.13
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.17,
-            0.38,
-            0.34
-          ]}
-        />
-
+function ChartScreen({ tf, color, seed }) {
+  return (
+    <group position={[0, 1.45, 0]}>
+      <mesh>
+        <boxGeometry args={[1.42, 0.82, 0.08]} />
         <meshStandardMaterial
-          color="#101922"
-          metalness={0.25}
+          color="#101419"
+          metalness={0.55}
           roughness={0.35}
         />
-
       </mesh>
 
+      <mesh position={[0, 0, 0.045]}>
+        <planeGeometry args={[1.27, 0.67]} />
+        <meshBasicMaterial color="#071016" />
+      </mesh>
 
-      {/* PAPERS */}
+      {/* Chart */}
+      <group position={[0, 0, 0.09]} scale={[0.7, 0.65, 1]}>
+        <MovingChart color={color} seed={seed} />
+      </group>
 
-      <mesh
-        position={[
-          -0.39,
-          0.79,
-          0.22
-        ]}
+      <mesh position={[0, -0.41, 0]}>
+        <boxGeometry args={[0.13, 0.25, 0.12]} />
+        <meshStandardMaterial color="#24282e" />
+      </mesh>
+
+      <mesh position={[0, -0.54, 0]}>
+        <boxGeometry args={[0.55, 0.05, 0.28]} />
+        <meshStandardMaterial color="#20242a" />
+      </mesh>
+
+      <Html
+        position={[-0.58, 0.27, 0.1]}
+        center
+        distanceFactor={7}
+        style={{
+          color,
+          fontSize: "7px",
+          fontWeight: 800,
+          letterSpacing: "0.1em",
+          pointerEvents: "none",
+          textTransform: "uppercase",
+        }}
       >
-
-        <boxGeometry
-          args={[
-            0.34,
-            0.025,
-            0.22
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#e8e1d3"
-        />
-
-      </mesh>
-
-
-      {/* COFFEE */}
-
-      <mesh
-        position={[
-          0.53,
-          0.82,
-          0.26
-        ]}
-      >
-
-        <cylinderGeometry
-          args={[
-            0.055,
-            0.045,
-            0.10,
-            12
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#f1ece1"
-        />
-
-      </mesh>
-
-
-      {/* SELECTION */}
-
-      {selected && (
-
-        <mesh
-          position={[
-            0,
-            0.87,
-            0
-          ]}
-        >
-
-          <boxGeometry
-            args={[
-              1.76,
-              0.015,
-              0.98
-            ]}
-          />
-
-          <meshBasicMaterial
-            color="#e4ba63"
-            wireframe
-          />
-
-        </mesh>
-
-      )}
-
+        {tf}
+      </Html>
     </group>
-  )
+  );
 }
-
 
 /* =========================================================
    CHAIR
-========================================================= */
+   ========================================================= */
 
-function Chair({
-  position
-}) {
-
+function Chair({ position, rotation = 0 }) {
   return (
-
-    <group
-      position={position}
-    >
-
-      <mesh
-        position={[
-          0,
-          0.43,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.50,
-            0.10,
-            0.44
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#26394c"
-        />
-
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.48, 0]}>
+        <boxGeometry args={[0.55, 0.08, 0.55]} />
+        <meshStandardMaterial color="#181b20" roughness={0.8} />
       </mesh>
 
-
-      <mesh
-        position={[
-          0,
-          0.76,
-          -0.18
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.50,
-            0.55,
-            0.08
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#26394c"
-        />
-
+      <mesh position={[0, 0.9, -0.23]}>
+        <boxGeometry args={[0.55, 0.8, 0.08]} />
+        <meshStandardMaterial color="#15181d" roughness={0.8} />
       </mesh>
 
-
-      <mesh
-        position={[
-          0,
-          0.18,
-          0
-        ]}
-      >
-
-        <cylinderGeometry
-          args={[
-            0.035,
-            0.035,
-            0.45,
-            8
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#677680"
-        />
-
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.035, 0.035, 0.45, 8]} />
+        <meshStandardMaterial color="#343941" />
       </mesh>
 
+      <mesh position={[0, 0.03, 0]}>
+        <cylinderGeometry args={[0.22, 0.28, 0.05, 10]} />
+        <meshStandardMaterial color="#282c32" />
+      </mesh>
     </group>
-  )
+  );
 }
 
-
 /* =========================================================
-   WALKING PERSON
-========================================================= */
+   DESK
+   ========================================================= */
 
-function WalkingPerson({
-  start,
-  target,
+function Desk({
+  position,
   color,
-  state,
-  speech,
-  onClick
+  tf,
+  index,
 }) {
-
-  const group =
-    useRef()
-
-  const [progress, setProgress] =
-    useState(0)
-
-  const [phase] =
-    useState(
-      Math.random() * 10
-    )
-
-
-  useEffect(() => {
-
-    setProgress(0)
-
-  }, [
-    target[0],
-    target[2],
-    state
-  ])
-
-
-  useFrame((_, delta) => {
-
-    if (!group.current)
-      return
-
-
-    const distance =
-      Math.sqrt(
-        Math.pow(
-          target[0] - start[0],
-          2
-        ) +
-        Math.pow(
-          target[2] - start[2],
-          2
-        )
-      )
-
-
-    const speed =
-      state === 'walking'
-        ? 0.25
-        : 0.50
-
-
-    const next =
-      Math.min(
-        progress +
-        delta *
-        speed /
-        Math.max(distance, 0.1),
-        1
-      )
-
-
-    if (
-      next !== progress
-    ) {
-
-      setProgress(next)
-
-    }
-
-
-    const ease =
-      next < 0.5
-        ? 2 * next * next
-        : 1 -
-          Math.pow(
-            -2 * next + 2,
-            2
-          ) / 2
-
-
-    const x =
-      start[0] +
-      (target[0] - start[0]) *
-      ease
-
-
-    const z =
-      start[2] +
-      (target[2] - start[2]) *
-      ease
-
-
-    group.current.position.x =
-      x
-
-    group.current.position.z =
-      z
-
-
-    /* WALKING BOB */
-
-    const walking =
-      state === 'walking'
-
-
-    const bob =
-      walking
-        ? Math.abs(
-            Math.sin(
-              phase +
-              performance.now() *
-              0.008
-            )
-          ) * 0.045
-        : 0
-
-
-    group.current.position.y =
-      bob
-
-
-    /* FACE DIRECTION */
-
-    const dx =
-      target[0] - start[0]
-
-    const dz =
-      target[2] - start[2]
-
-
-    if (
-      Math.abs(dx) +
-      Math.abs(dz) >
-      0.05
-    ) {
-
-      group.current.rotation.y =
-        Math.atan2(
-          dx,
-          dz
-        )
-
-    }
-
-  })
-
-
-  const walking =
-    state === 'walking'
-
-
-  const working =
-    state === 'working'
-
-
-  const coffee =
-    state === 'coffee'
-
-
-  const arm =
-    walking
-      ? Math.sin(
-          performance.now() *
-          0.008
-        ) * 0.28
-      : working
-        ? Math.sin(
-            performance.now() *
-            0.006
-          ) * 0.08
-        : 0
-
-
   return (
-
-    <group
-      ref={group}
-      onClick={onClick}
-    >
-
-      {/* BODY */}
-
-      <mesh
-        position={[
-          0,
-          working ? 0.66 : 0.82,
-          0
-        ]}
-        castShadow
-      >
-
-        <boxGeometry
-          args={[
-            0.40,
-            working ? 0.40 : 0.50,
-            0.30
-          ]}
-        />
-
+    <group position={position}>
+      {/* tabletop */}
+      <mesh position={[0, 1.02, 0]}>
+        <boxGeometry args={[1.65, 0.12, 0.85]} />
         <meshStandardMaterial
-          color="#3c6689"
+          color="#171a1f"
+          metalness={0.35}
+          roughness={0.62}
         />
-
       </mesh>
 
-
-      {/* HEAD */}
-
-      <mesh
-        position={[
-          0,
-          working ? 1.05 : 1.20,
-          0
-        ]}
-        castShadow
-      >
-
-        <sphereGeometry
-          args={[
-            0.18,
-            14,
-            12
-          ]}
-        />
-
-        <meshStandardMaterial
-          color={color}
-        />
-
+      {/* edge */}
+      <mesh position={[0, 0.94, 0.41]}>
+        <boxGeometry args={[1.67, 0.04, 0.04]} />
+        <meshStandardMaterial color={color} />
       </mesh>
 
-
-      {/* HAIR */}
-
-      <mesh
-        position={[
-          0,
-          working ? 1.15 : 1.31,
-          0
-        ]}
-      >
-
-        <sphereGeometry
-          args={[
-            0.17,
-            12,
-            8
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#25282c"
-        />
-
-      </mesh>
-
-
-      {/* LEFT ARM */}
-
-      <mesh
-        position={[
-          -0.26,
-          working ? 0.70 : 0.83,
-          0.02
-        ]}
-        rotation={[
-          0,
-          0,
-          -0.45 + arm
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.12,
-            0.36,
-            0.13
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#3c6689"
-        />
-
-      </mesh>
-
-
-      {/* RIGHT ARM */}
-
-      <mesh
-        position={[
-          0.26,
-          working ? 0.70 : 0.83,
-          0.02
-        ]}
-        rotation={[
-          0,
-          0,
-          0.45 - arm
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.12,
-            0.36,
-            0.13
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#3c6689"
-        />
-
-      </mesh>
-
-
-      {/* LEGS */}
-
-      <mesh
-        position={[
-          -0.10,
-          0.38,
-          0
-        ]}
-        rotation={[
-          walking
-            ? Math.sin(
-                performance.now() *
-                0.008
-              ) * 0.35
-            : 0,
-          0,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.12,
-            0.40,
-            0.13
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#26313d"
-        />
-
-      </mesh>
-
-
-      <mesh
-        position={[
-          0.10,
-          0.38,
-          0
-        ]}
-        rotation={[
-          walking
-            ? Math.sin(
-                performance.now() *
-                0.008 +
-                Math.PI
-              ) * 0.35
-            : 0,
-          0,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.12,
-            0.40,
-            0.13
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#26313d"
-        />
-
-      </mesh>
-
-
-      {/* COFFEE CUP */}
-
-      {coffee && (
-
-        <mesh
-          position={[
-            0.30,
-            0.95,
-            0.20
-          ]}
-        >
-
-          <cylinderGeometry
-            args={[
-              0.055,
-              0.045,
-              0.11,
-              12
-            ]}
-          />
-
-          <meshStandardMaterial
-            color="#eee8db"
-          />
-
+      {/* legs */}
+      {[
+        [-0.68, 0.46, -0.29],
+        [0.68, 0.46, -0.29],
+        [-0.68, 0.46, 0.29],
+        [0.68, 0.46, 0.29],
+      ].map((p, i) => (
+        <mesh key={i} position={p}>
+          <boxGeometry args={[0.06, 0.92, 0.06]} />
+          <meshStandardMaterial color="#2a2e34" />
         </mesh>
+      ))}
 
-      )}
+      <ChartScreen
+        tf={tf}
+        color={color}
+        seed={index + 1}
+      />
 
+      {/* keyboard */}
+      <mesh position={[0, 1.09, 0.25]}>
+        <boxGeometry args={[0.58, 0.025, 0.22]} />
+        <meshStandardMaterial color="#25292f" />
+      </mesh>
 
-      {/* SPEECH */}
+      {/* mouse */}
+      <mesh position={[0.47, 1.1, 0.22]}>
+        <boxGeometry args={[0.12, 0.035, 0.17]} />
+        <meshStandardMaterial color="#30353b" />
+      </mesh>
 
-      {speech && (
-
-        <Html
-          position={[
-            0,
-            working ? 1.55 : 1.62,
-            0
-          ]}
-          center
-          distanceFactor={7}
-        >
-
-          <div className="speech-bubble">
-
-            <span>
-              {speech}
-            </span>
-
-          </div>
-
-        </Html>
-
-      )}
-
+      <Chair
+        position={[0, 0, 0.88]}
+        rotation={Math.PI}
+      />
     </group>
-  )
+  );
 }
-
-
-/* =========================================================
-   LEADER
-========================================================= */
-
-function Leader({
-  mode
-}) {
-
-  const group =
-    useRef()
-
-  const [point, setPoint] =
-    useState(0)
-
-
-  const patrol = [
-
-    [-3.8, 0, -1.55],
-
-    [-2.0, 0, -1.15],
-
-    [0.0, 0, -1.55],
-
-    [2.0, 0, -1.15],
-
-    [3.8, 0, -1.55],
-
-    [1.8, 0, -2.25],
-
-    [-1.8, 0, -2.25]
-
-  ]
-
-
-  useEffect(() => {
-
-    if (
-      mode !== 'discussion'
-    ) return
-
-
-    const id =
-      setInterval(() => {
-
-        setPoint(
-          p =>
-            (p + 1) %
-            patrol.length
-        )
-
-      }, 4800)
-
-
-    return () =>
-      clearInterval(id)
-
-  }, [mode])
-
-
-  const target =
-    mode === 'briefing'
-      ? [0, 0, -1.45]
-      : patrol[point]
-
-
-  useFrame((_, delta) => {
-
-    if (!group.current)
-      return
-
-
-    const current =
-      group.current.position
-
-
-    const dx =
-      target[0] -
-      current.x
-
-
-    const dz =
-      target[2] -
-      current.z
-
-
-    const distance =
-      Math.sqrt(
-        dx * dx +
-        dz * dz
-      )
-
-
-    if (
-      distance > 0.04
-    ) {
-
-      const speed =
-        mode === 'briefing'
-          ? 1.8
-          : 0.7
-
-
-      current.x +=
-        (dx / distance) *
-        speed *
-        delta
-
-
-      current.z +=
-        (dz / distance) *
-        speed *
-        delta
-
-
-      group.current.rotation.y =
-        Math.atan2(
-          dx,
-          dz
-        )
-
-    }
-
-  })
-
-
-  return (
-
-    <group ref={group}>
-
-      {/* body */}
-
-      <mesh
-        position={[
-          0,
-          0.84,
-          0
-        ]}
-        castShadow
-      >
-
-        <boxGeometry
-          args={[
-            0.42,
-            0.52,
-            0.31
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#c9a04f"
-        />
-
-      </mesh>
-
-
-      {/* head */}
-
-      <mesh
-        position={[
-          0,
-          1.22,
-          0
-        ]}
-        castShadow
-      >
-
-        <sphereGeometry
-          args={[
-            0.19,
-            14,
-            12
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#d9a17c"
-        />
-
-      </mesh>
-
-
-      {/* hair */}
-
-      <mesh
-        position={[
-          0,
-          1.33,
-          0
-        ]}
-      >
-
-        <sphereGeometry
-          args={[
-            0.18,
-            12,
-            8
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#20252a"
-        />
-
-      </mesh>
-
-
-      {/* arms */}
-
-      <mesh
-        position={[
-          -0.28,
-          0.85,
-          0
-        ]}
-        rotation={[
-          0,
-          0,
-          -0.45
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.13,
-            0.38,
-            0.14
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#c9a04f"
-        />
-
-      </mesh>
-
-
-      <mesh
-        position={[
-          0.28,
-          0.85,
-          0
-        ]}
-        rotation={[
-          0,
-          0,
-          0.45
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.13,
-            0.38,
-            0.14
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#c9a04f"
-        />
-
-      </mesh>
-
-
-      {/* leader speech */}
-
-      {mode === 'briefing' && (
-
-        <Html
-          position={[
-            0,
-            1.75,
-            0
-          ]}
-          center
-          distanceFactor={7}
-        >
-
-          <div className="speech-bubble leader-bubble">
-
-            <span>
-              Team, let's prepare for the
-              next XAUUSD session.
-            </span>
-
-          </div>
-
-        </Html>
-
-      )}
-
-    </group>
-  )
-}
-
 
 /* =========================================================
    COFFEE MACHINE
-========================================================= */
+   ========================================================= */
 
-function CoffeeMachine({
-  position
-}) {
-
-  const [steam, setSteam] =
-    useState(false)
-
-
-  useEffect(() => {
-
-    const id =
-      setInterval(() => {
-
-        setSteam(v => !v)
-
-      }, 900)
-
-
-    return () =>
-      clearInterval(id)
-
-  }, [])
-
-
+function CoffeeStation() {
   return (
-
-    <group
-      position={position}
-    >
-
-      {/* cabinet */}
-
-      <mesh
-        position={[
-          0,
-          0.55,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            1.15,
-            1.10,
-            0.55
-          ]}
-        />
-
+    <group position={[4.5, 0, -2.15]}>
+      {/* counter */}
+      <mesh position={[0, 0.62, 0]}>
+        <boxGeometry args={[1.35, 1.15, 0.78]} />
         <meshStandardMaterial
-          color="#252e36"
-          roughness={0.35}
-          metalness={0.35}
+          color="#17191d"
+          metalness={0.25}
+          roughness={0.7}
         />
-
       </mesh>
 
+      <mesh position={[0, 1.22, 0]}>
+        <boxGeometry args={[1.48, 0.08, 0.86]} />
+        <meshStandardMaterial color="#292d32" />
+      </mesh>
 
-      {/* top */}
-
-      <mesh
-        position={[
-          0,
-          1.14,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.86,
-            0.16,
-            0.44
-          ]}
-        />
-
+      {/* coffee machine */}
+      <mesh position={[0, 1.65, -0.02]}>
+        <boxGeometry args={[0.65, 0.75, 0.55]} />
         <meshStandardMaterial
-          color="#111820"
+          color="#292d31"
+          metalness={0.7}
+          roughness={0.3}
         />
-
       </mesh>
 
-
-      {/* screen */}
-
-      <mesh
-        position={[
-          0,
-          0.92,
-          0.285
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.30,
-            0.13,
-            0.018
-          ]}
-        />
-
-        <meshBasicMaterial
-          color="#17343a"
-        />
-
+      <mesh position={[0, 1.72, 0.285]}>
+        <boxGeometry args={[0.38, 0.25, 0.025]} />
+        <meshBasicMaterial color="#11181c" />
       </mesh>
 
-
-      <Html
-        position={[
-          0,
-          0.92,
-          0.30
-        ]}
-        transform
-        distanceFactor={5}
-        center
-      >
-
-        <div className="coffee-display">
-          COFFEE
-        </div>
-
-      </Html>
-
-
-      {/* buttons */}
-
-      {[-0.18, 0, 0.18].map(
-        (x, i) => (
-
-          <mesh
-            key={i}
-            position={[
-              x,
-              0.69,
-              0.29
-            ]}
-          >
-
-            <sphereGeometry
-              args={[
-                0.035,
-                8,
-                8
-              ]}
-            />
-
-            <meshBasicMaterial
-              color={
-                i === 1
-                  ? '#d8b45d'
-                  : '#65727a'
-              }
-            />
-
-          </mesh>
-
-        )
-      )}
-
-
-      {/* tray */}
-
-      <mesh
-        position={[
-          0,
-          0.46,
-          0.30
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.58,
-            0.035,
-            0.30
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#11161b"
-        />
-
+      <mesh position={[0, 1.56, 0.32]}>
+        <cylinderGeometry args={[0.035, 0.035, 0.18, 10]} />
+        <meshStandardMaterial color="#d0a84d" />
       </mesh>
-
 
       {/* cup */}
-
-      <mesh
-        position={[
-          0,
-          0.56,
-          0.30
-        ]}
-      >
-
-        <cylinderGeometry
-          args={[
-            0.075,
-            0.06,
-            0.12,
-            12
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#eee9df"
-        />
-
+      <mesh position={[0.38, 1.3, 0.15]}>
+        <cylinderGeometry args={[0.09, 0.07, 0.14, 16]} />
+        <meshStandardMaterial color="#eee9dc" />
       </mesh>
 
+      <mesh position={[-0.37, 1.3, 0.14]}>
+        <cylinderGeometry args={[0.09, 0.07, 0.14, 16]} />
+        <meshStandardMaterial color="#eee9dc" />
+      </mesh>
 
-      {/* steam */}
-
-      {steam && (
-
-        <>
-
-          <mesh
-            position={[
-              -0.025,
-              0.76,
-              0.30
-            ]}
-          >
-
-            <sphereGeometry
-              args={[
-                0.018,
-                6,
-                6
-              ]}
-            />
-
-            <meshBasicMaterial
-              color="#d5dadd"
-              transparent
-              opacity={0.45}
-            />
-
-          </mesh>
-
-
-          <mesh
-            position={[
-              0.025,
-              0.81,
-              0.30
-            ]}
-          >
-
-            <sphereGeometry
-              args={[
-                0.014,
-                6,
-                6
-              ]}
-            />
-
-            <meshBasicMaterial
-              color="#d5dadd"
-              transparent
-              opacity={0.35}
-            />
-
-          </mesh>
-
-        </>
-
-      )}
-
+      <Html
+        position={[0, 2.18, 0]}
+        center
+        distanceFactor={7}
+        style={{
+          color: "#b99146",
+          fontSize: "8px",
+          fontWeight: 800,
+          letterSpacing: "0.12em",
+          pointerEvents: "none",
+        }}
+      >
+        COFFEE
+      </Html>
     </group>
-  )
+  );
 }
-
 
 /* =========================================================
    PLANT
-========================================================= */
+   ========================================================= */
 
-function Plant({
-  position
-}) {
-
+function Plant({ position }) {
   return (
-
-    <group
-      position={position}
-    >
-
-      <mesh
-        position={[
-          0,
-          0.25,
-          0
-        ]}
-      >
-
-        <cylinderGeometry
-          args={[
-            0.22,
-            0.17,
-            0.38,
-            12
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#9b674b"
-        />
-
+    <group position={position}>
+      <mesh position={[0, 0.22, 0]}>
+        <cylinderGeometry args={[0.25, 0.19, 0.44, 16]} />
+        <meshStandardMaterial color="#39302a" roughness={0.9} />
       </mesh>
 
-
       {[
-        [-0.16, 0.58, 0],
-        [0.16, 0.65, 0],
         [0, 0.78, 0],
-        [-0.05, 0.95, 0],
-        [0.18, 0.86, 0]
-      ].map(
-        (p, i) => (
-
-          <mesh
-            key={i}
-            position={p}
-          >
-
-            <sphereGeometry
-              args={[
-                0.12,
-                8,
-                6
-              ]}
-            />
-
-            <meshStandardMaterial
-              color="#477153"
-            />
-
-          </mesh>
-
-        )
-      )}
-
+        [0.18, 0.66, 0.04],
+        [-0.2, 0.66, 0.02],
+        [0.08, 0.7, -0.16],
+      ].map((p, i) => (
+        <mesh key={i} position={p} rotation={[0.2 * i, i * 0.7, 0]}>
+          <sphereGeometry args={[0.18, 8, 8]} />
+          <meshStandardMaterial
+            color="#274936"
+            roughness={0.9}
+          />
+        </mesh>
+      ))}
     </group>
-  )
+  );
 }
 
+/* =========================================================
+   PERSON
+   ========================================================= */
+
+function Person({
+  index,
+  position,
+  target,
+  color,
+  shirt,
+  talking,
+  speech,
+  sitting,
+  coffee,
+  leader = false,
+}) {
+  const group = useRef(null);
+
+  const walkOffset = useMemo(
+    () => Math.random() * Math.PI * 2,
+    []
+  );
+
+  const basePosition = useMemo(
+    () => [...position],
+    [position]
+  );
+
+  useFrame(({ clock }, delta) => {
+    if (!group.current) return;
+
+    const current = group.current.position;
+
+    const tx = target?.[0] ?? current.x;
+    const tz = target?.[2] ?? current.z;
+
+    const dx = tx - current.x;
+    const dz = tz - current.z;
+
+    const distance = Math.sqrt(dx * dx + dz * dz);
+
+    let walking = false;
+
+    if (distance > 0.06) {
+      walking = true;
+
+      const speed = leader ? 1.75 : 1.45;
+      const step = Math.min(distance, speed * delta);
+
+      current.x += (dx / distance) * step;
+      current.z += (dz / distance) * step;
+
+      const desiredRotation = Math.atan2(dx, dz);
+
+      let rotationDelta =
+        desiredRotation - group.current.rotation.y;
+
+      while (rotationDelta > Math.PI) {
+        rotationDelta -= Math.PI * 2;
+      }
+
+      while (rotationDelta < -Math.PI) {
+        rotationDelta += Math.PI * 2;
+      }
+
+      group.current.rotation.y += rotationDelta * 0.12;
+    }
+
+    const bob = walking
+      ? Math.abs(Math.sin(clock.elapsedTime * 9 + walkOffset)) *
+        0.035
+      : 0;
+
+    group.current.position.y =
+      basePosition[1] +
+      bob +
+      (sitting ? -0.16 : 0);
+
+    const armsSwing =
+      walking
+        ? Math.sin(clock.elapsedTime * 9 + walkOffset) * 0.28
+        : sitting
+        ? 0.08
+        : Math.sin(clock.elapsedTime * 2.5 + walkOffset) * 0.03;
+
+    const leftArm = group.current.userData.leftArm;
+    const rightArm = group.current.userData.rightArm;
+
+    if (leftArm && rightArm) {
+      leftArm.rotation.z = 0.08 + armsSwing;
+      rightArm.rotation.z = -0.08 - armsSwing;
+    }
+  });
+
+  const bodyY = sitting ? 0.65 : 0.82;
+  const headY = sitting ? 1.02 : 1.25;
+
+  return (
+    <group
+      ref={group}
+      position={position}
+    >
+      {/* speech bubble */}
+      {talking && speech && (
+        <Html
+          position={[
+            0,
+            leader ? 2.35 : 2.0,
+            0,
+          ]}
+          center
+          distanceFactor={6}
+          style={{
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            className={
+              leader
+                ? "speech-bubble leader-bubble"
+                : "speech-bubble"
+            }
+          >
+            {speech}
+          </div>
+        </Html>
+      )}
+
+      {/* head */}
+      <mesh position={[0, headY, 0]}>
+        <sphereGeometry
+          args={[
+            leader ? 0.22 : 0.19,
+            16,
+            16,
+          ]}
+        />
+        <meshStandardMaterial color="#b87956" roughness={0.8} />
+      </mesh>
+
+      {/* hair */}
+      <mesh position={[0, headY + 0.09, -0.015]}>
+        <sphereGeometry args={[0.195, 12, 12]} />
+        <meshStandardMaterial color="#1b1715" roughness={1} />
+      </mesh>
+
+      {/* body */}
+      <mesh position={[0, bodyY, 0]}>
+        <boxGeometry
+          args={[
+            leader ? 0.46 : 0.39,
+            leader ? 0.75 : 0.68,
+            0.28,
+          ]}
+        />
+        <meshStandardMaterial
+          color={leader ? "#b68a31" : shirt}
+          roughness={0.72}
+        />
+      </mesh>
+
+      {/* left arm */}
+      <mesh
+        ref={(node) => {
+          if (group.current) {
+            group.current.userData.leftArm = node;
+          }
+        }}
+        position={[
+          leader ? -0.29 : -0.25,
+          bodyY + 0.02,
+          0,
+        ]}
+      >
+        <capsuleGeometry args={[0.07, 0.34, 5, 8]} />
+        <meshStandardMaterial
+          color="#b87956"
+          roughness={0.8}
+        />
+      </mesh>
+
+      {/* right arm */}
+      <mesh
+        ref={(node) => {
+          if (group.current) {
+            group.current.userData.rightArm = node;
+          }
+        }}
+        position={[
+          leader ? 0.29 : 0.25,
+          bodyY + 0.02,
+          0,
+        ]}
+      >
+        <capsuleGeometry args={[0.07, 0.34, 5, 8]} />
+        <meshStandardMaterial
+          color="#b87956"
+          roughness={0.8}
+        />
+      </mesh>
+
+      {/* legs */}
+      <mesh position={[-0.11, 0.28, 0]}>
+        <capsuleGeometry args={[0.075, 0.42, 5, 8]} />
+        <meshStandardMaterial color="#252931" />
+      </mesh>
+
+      <mesh position={[0.11, 0.28, 0]}>
+        <capsuleGeometry args={[0.075, 0.42, 5, 8]} />
+        <meshStandardMaterial color="#252931" />
+      </mesh>
+
+      {/* shoes */}
+      <mesh position={[-0.11, 0.05, 0.05]}>
+        <boxGeometry args={[0.17, 0.08, 0.28]} />
+        <meshStandardMaterial color="#111317" />
+      </mesh>
+
+      <mesh position={[0.11, 0.05, 0.05]}>
+        <boxGeometry args={[0.17, 0.08, 0.28]} />
+        <meshStandardMaterial color="#111317" />
+      </mesh>
+
+      {/* coffee cup in hand */}
+      {coffee && (
+        <group position={[0.39, bodyY - 0.02, 0.12]}>
+          <mesh>
+            <cylinderGeometry args={[0.06, 0.045, 0.11, 12]} />
+            <meshStandardMaterial color="#e7e2d5" />
+          </mesh>
+
+          <mesh position={[0, 0.075, 0]}>
+            <sphereGeometry args={[0.035, 8, 8]} />
+            <meshBasicMaterial
+              color="#b37a38"
+              transparent
+              opacity={0.55}
+            />
+          </mesh>
+        </group>
+      )}
+
+      {/* subtle active dot */}
+      <mesh position={[0.28, headY + 0.18, 0]}>
+        <sphereGeometry args={[0.028, 8, 8]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+    </group>
+  );
+}
+
+/* =========================================================
+   MEETING TABLE
+   ========================================================= */
+
+function MeetingTable() {
+  return (
+    <group position={[0, 0, -1.7]}>
+      <mesh position={[0, 0.78, 0]}>
+        <cylinderGeometry args={[1.1, 1.1, 0.12, 32]} />
+        <meshStandardMaterial
+          color="#171a1e"
+          metalness={0.3}
+          roughness={0.65}
+        />
+      </mesh>
+
+      <mesh position={[0, 0.39, 0]}>
+        <cylinderGeometry args={[0.1, 0.22, 0.75, 16]} />
+        <meshStandardMaterial color="#24282e" />
+      </mesh>
+
+      <mesh position={[0, 0.02, 0]}>
+        <cylinderGeometry args={[0.55, 0.6, 0.06, 24]} />
+        <meshStandardMaterial color="#1d2025" />
+      </mesh>
+    </group>
+  );
+}
+
+/* =========================================================
+   CEILING LIGHT
+   ========================================================= */
+
+function CeilingLight({ position }) {
+  return (
+    <group position={position}>
+      <mesh>
+        <boxGeometry args={[1.2, 0.04, 0.35]} />
+        <meshStandardMaterial
+          color="#c8b47a"
+          emissive="#8b702f"
+          emissiveIntensity={0.4}
+        />
+      </mesh>
+
+      <pointLight
+        intensity={0.7}
+        distance={5}
+        color="#d8b968"
+      />
+    </group>
+  );
+}
 
 /* =========================================================
    OFFICE SCENE
-========================================================= */
+   ========================================================= */
 
-function OfficeScene({
-  mode,
-  selected,
-  setSelected,
-  speechPerson,
-  speechText
-}) {
-
-  const deskPositions = [
-    [-3.15, 0, 0.50],
-    [-1.55, 0, 0.50],
-    [0.05, 0, 0.50],
-    [1.65, 0, 0.50],
-    [3.25, 0, 0.50]
-  ]
-
+function OfficeScene({ clock }) {
+  const secondsOfDay =
+    clock.hour * 3600 +
+    clock.minute * 60 +
+    clock.second;
 
   /*
-    WALKING ROUTES
+    OFFICE STATE
+
+    00:00 - briefing
+    00:18 - social
+    01:00 - 29:59 social / walking / talking
+    30:00 - 59:59 working at desks
   */
 
-  const routes = [
+  const briefing =
+    clock.minute === 0 &&
+    clock.second < 18;
 
+  const working = clock.minute >= 30;
+
+  const mode = briefing
+    ? "briefing"
+    : working
+    ? "working"
+    : "social";
+
+  /* =====================================================
+     DESK POSITIONS
+     ===================================================== */
+
+  const deskPositions = [
+    [-3.35, 0, 0.25],
+    [-1.68, 0, 0.25],
+    [0, 0, 0.25],
+    [1.68, 0, 0.25],
+    [3.35, 0, 0.25],
+  ];
+
+  /* =====================================================
+     SOCIAL WAYPOINTS
+     ===================================================== */
+
+  const socialPaths = [
     [
-      [-3.15, 0, 1.20],
-      [-3.8, 0, -0.65],
-      [-2.7, 0, -1.30]
+      [-3.4, 0, 1.85],
+      [-2.0, 0, -1.1],
+      [-0.3, 0, -2.0],
+      [-1.0, 0, 1.9],
     ],
-
     [
-      [-1.55, 0, 1.20],
-      [-0.8, 0, -0.75],
-      [-1.9, 0, -1.55]
+      [-2.0, 0, -1.5],
+      [-0.4, 0, -2.0],
+      [1.0, 0, -1.25],
+      [0.4, 0, 1.85],
     ],
-
     [
-      [0.05, 0, 1.20],
-      [0.9, 0, -0.75],
-      [0.3, 0, -1.70]
+      [-0.5, 0, 1.85],
+      [1.0, 0, -1.9],
+      [2.2, 0, -1.1],
+      [1.3, 0, 1.85],
     ],
-
     [
-      [1.65, 0, 1.20],
-      [2.8, 0, -0.70],
-      [2.0, 0, -1.60]
+      [1.1, 0, 1.9],
+      [2.5, 0, -1.8],
+      [3.9, 0, -0.5],
+      [2.6, 0, 1.75],
     ],
-
     [
-      [3.25, 0, 1.20],
-      [4.1, 0, -0.80],
-      [3.4, 0, -1.80]
-    ]
+      [3.4, 0, 1.8],
+      [4.0, 0, -0.5],
+      [2.7, 0, -1.9],
+      [1.9, 0, 1.75],
+    ],
+  ];
 
-  ]
+  const coffeeCycle =
+    Math.floor(secondsOfDay / 50) % TEAM.length;
 
+  const coffeeWindow =
+    secondsOfDay % 50 >= 31 &&
+    secondsOfDay % 50 <= 42;
 
-  const [routeIndex, setRouteIndex] =
-    useState(
-      [0, 1, 2, 3, 4]
-    )
+  const coffeePerson =
+    coffeeWindow ? coffeeCycle : -1;
 
+  /* =====================================================
+     PERSON DATA
+     ===================================================== */
 
-  useEffect(() => {
+  const people = TEAM.map((person, index) => {
+    const desk = deskPositions[index];
 
-    if (
-      mode !== 'discussion'
-    ) return
+    const path = socialPaths[index];
 
+    const waypointIndex =
+      Math.floor(secondsOfDay / 10 + index * 1.7) %
+      path.length;
 
-    const id =
-      setInterval(() => {
+    const coffee =
+      mode === "social" &&
+      coffeePerson === index;
 
-        setRouteIndex(
-          arr =>
-            arr.map(
-              value =>
-                (value + 1) % 3
-            )
-        )
+    let target;
 
-      }, 5000)
+    if (mode === "working") {
+      target = [
+        desk[0],
+        0,
+        desk[2] + 1.03,
+      ];
+    } else if (mode === "briefing") {
+      const meetingOffsets = [
+        [-2.0, 0.7],
+        [-1.0, -0.2],
+        [0, 0.65],
+        [1.0, -0.2],
+        [2.0, 0.65],
+      ];
 
+      target = [
+        meetingOffsets[index][0],
+        0,
+        -1.1 + meetingOffsets[index][1],
+      ];
+    } else if (coffee) {
+      target = [4.5, 0, -1.0];
+    } else {
+      target = path[waypointIndex];
+    }
 
-    return () =>
-      clearInterval(id)
+    const talkingIndex =
+      Math.floor(secondsOfDay / 6) % TEAM.length;
 
-  }, [mode])
+    const talking =
+      mode === "social" &&
+      !coffee &&
+      talkingIndex === index &&
+      secondsOfDay % 6 < 5;
 
+    const speechIndex =
+      Math.floor(secondsOfDay / 18) %
+      person.speech.length;
+
+    return {
+      ...person,
+      target,
+      talking,
+      speech: person.speech[speechIndex],
+      sitting: mode === "working",
+      coffee,
+    };
+  });
+
+  /* =====================================================
+     LEADER MOVEMENT
+     ===================================================== */
+
+  const leaderPath = [
+    [-4.5, 0, -1.0],
+    [4.2, 0, -1.0],
+    [4.3, 0, 1.9],
+    [-4.2, 0, 1.9],
+    [0, 0, -0.6],
+  ];
+
+  const leaderWaypoint =
+    Math.floor(secondsOfDay / 14) %
+    leaderPath.length;
+
+  let leaderTarget;
+
+  if (briefing) {
+    leaderTarget = [0, 0, 0.65];
+  } else {
+    leaderTarget = leaderPath[leaderWaypoint];
+  }
+
+  const leaderTalking =
+    briefing ||
+    (mode === "social" &&
+      secondsOfDay % 20 >= 4 &&
+      secondsOfDay % 20 <= 9);
 
   return (
-
     <>
-
-      {/* =================================================
-          LIGHTING
-      ================================================= */}
-
-      <color
-        attach="background"
-        args={[
-          '#07111e'
-        ]}
-      />
-
-
-      <ambientLight
-        intensity={1.5}
-      />
-
-
-      <directionalLight
-        position={[
-          4,
-          8,
-          5
-        ]}
-        intensity={2.8}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-      />
-
-
-      <pointLight
-        position={[
-          -4,
-          3,
-          -3
-        ]}
-        intensity={10}
-        color="#376fb4"
-        distance={13}
-      />
-
-
-      <pointLight
-        position={[
-          4,
-          3,
-          -1
-        ]}
-        intensity={8}
-        color="#c58c48"
-        distance={11}
-      />
-
-
       {/* =================================================
           FLOOR
-      ================================================= */}
+          ================================================= */}
 
       <mesh
-        rotation={[
-          -Math.PI / 2,
-          0,
-          0
-        ]}
-        position={[
-          0,
-          -0.03,
-          0
-        ]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.03, 0]}
         receiveShadow
       >
-
-        <planeGeometry
-          args={[
-            14,
-            10
-          ]}
-        />
-
+        <planeGeometry args={[14, 8]} />
         <meshStandardMaterial
-          color="#172637"
-          roughness={0.80}
+          color="#0c0f13"
+          roughness={0.92}
         />
-
       </mesh>
 
-
+      {/* floor grid */}
       <gridHelper
-        args={[
-          14,
-          28,
-          '#29435f',
-          '#1b3047'
-        ]}
-        position={[
-          0,
-          0.005,
-          0
-        ]}
+        args={[14, 28, "#25292e", "#15181c"]}
+        position={[0, 0, 0]}
       />
 
+      {/* back wall */}
+      <mesh position={[0, 2.2, -3.65]}>
+        <boxGeometry args={[14, 4.5, 0.15]} />
+        <meshStandardMaterial
+          color="#101318"
+          roughness={0.95}
+        />
+      </mesh>
+
+      {/* side walls */}
+      <mesh position={[-6.9, 2.2, 0]}>
+        <boxGeometry args={[0.15, 4.5, 7.4]} />
+        <meshStandardMaterial color="#0d1014" />
+      </mesh>
+
+      <mesh position={[6.9, 2.2, 0]}>
+        <boxGeometry args={[0.15, 4.5, 7.4]} />
+        <meshStandardMaterial color="#0d1014" />
+      </mesh>
 
       {/* =================================================
-          WALL
-      ================================================= */}
-
-      <mesh
-        position={[
-          0,
-          2,
-          -4
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            13,
-            4,
-            0.18
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#dfe3e2"
-        />
-
-      </mesh>
-
-
-      <mesh
-        position={[
-          -6.5,
-          2,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.18,
-            4,
-            8
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#d9dddc"
-        />
-
-      </mesh>
-
-
-      <mesh
-        position={[
-          6.5,
-          2,
-          0
-        ]}
-      >
-
-        <boxGeometry
-          args={[
-            0.18,
-            4,
-            8
-          ]}
-        />
-
-        <meshStandardMaterial
-          color="#d9dddc"
-        />
-
-      </mesh>
-
-
-      {/* =================================================
-          WALL LOGO
-      ================================================= */}
+          FLAT WALL BRAND
+          ================================================= */}
 
       <Html
-        position={[
-          0,
-          2.45,
-          -3.87
-        ]}
+        position={[0, 2.75, -3.54]}
         center
-        distanceFactor={8}
+        distanceFactor={7}
+        style={{
+          pointerEvents: "none",
+        }}
       >
-
-        <div className="wall-logo-simple">
-
-          <small>
-            ARTIFICIAL INTELLIGENCE
-          </small>
-
-          <strong>
-            XAU AI
-          </strong>
-
-          <b>
-            SMC GOLD
-          </b>
-
-          <span>
-            TRADING INTELLIGENCE OFFICE
-          </span>
-
+        <div className="wall-logo">
+          XAU AI SMC GOLD
+          <small>AI TRADING INTELLIGENCE</small>
         </div>
-
       </Html>
 
+      {/* =================================================
+          WALL WINDOWS
+          ================================================= */}
+
+      {[-4.9, 0, 4.9].map((x, i) => (
+        <group key={i} position={[x, 2.15, -3.48]}>
+          <mesh>
+            <boxGeometry args={[2.35, 1.6, 0.035]} />
+            <meshStandardMaterial
+              color="#0b1720"
+              metalness={0.2}
+              roughness={0.5}
+            />
+          </mesh>
+
+          <mesh position={[0, 0, 0.025]}>
+            <planeGeometry args={[2.15, 1.4]} />
+            <meshBasicMaterial color="#08131a" />
+          </mesh>
+
+          <mesh position={[0, 0, 0.05]}>
+            <planeGeometry args={[1.8, 0.01]} />
+            <meshBasicMaterial color="#21343b" />
+          </mesh>
+        </group>
+      ))}
 
       {/* =================================================
-          WINDOWS
-      ================================================= */}
+          CEILING LIGHTS
+          ================================================= */}
 
-      {[
-        -4.7,
-        -3.25,
-        3.25,
-        4.7
-      ].map(
-        (x, i) => (
+      <CeilingLight position={[-3.5, 3.2, -0.7]} />
+      <CeilingLight position={[0, 3.2, -0.7]} />
+      <CeilingLight position={[3.5, 3.2, -0.7]} />
 
-          <group
-            key={i}
-            position={[
-              x,
-              1.75,
-              -3.67
-            ]}
-          >
+      {/* =================================================
+          DESKS
+          ================================================= */}
 
-            <mesh>
-
-              <boxGeometry
-                args={[
-                  1.05,
-                  1.45,
-                  0.06
-                ]}
-              />
-
-              <meshStandardMaterial
-                color="#9fbfd1"
-                emissive="#27445c"
-                emissiveIntensity={0.3}
-              />
-
-            </mesh>
-
-
-            <mesh
-              position={[
-                0,
-                0,
-                0.04
-              ]}
-            >
-
-              <boxGeometry
-                args={[
-                  1.13,
-                  1.53,
-                  0.04
-                ]}
-              />
-
-              <meshStandardMaterial
-                color="#b89e68"
-              />
-
-            </mesh>
-
-          </group>
-
-        )
-      )}
-
+      {deskPositions.map((position, index) => (
+        <Desk
+          key={index}
+          position={position}
+          color={TEAM[index].color}
+          tf={TEAM[index].tf}
+          index={index}
+        />
+      ))}
 
       {/* =================================================
           COFFEE
-      ================================================= */}
+          ================================================= */}
 
-      <CoffeeMachine
-        position={[
-          4.0,
-          0,
-          -2.45
-        ]}
-      />
+      <CoffeeStation />
 
+      {/* =================================================
+          MEETING TABLE
+          ================================================= */}
+
+      <MeetingTable />
 
       {/* =================================================
           PLANTS
-      ================================================= */}
+          ================================================= */}
 
-      <Plant
-        position={[
-          -5.2,
-          0,
-          -2.65
-        ]}
-      />
-
-      <Plant
-        position={[
-          5.25,
-          0,
-          1.5
-        ]}
-      />
-
+      <Plant position={[-5.4, 0, -2.4]} />
+      <Plant position={[5.4, 0, -2.4]} />
+      <Plant position={[-5.5, 0, 1.8]} />
 
       {/* =================================================
-          DESKS + PEOPLE
-      ================================================= */}
+          PEOPLE
+          ================================================= */}
 
-      {TEAM.map(
-        (a, i) => {
-
-          const desk =
-            deskPositions[i]
-
-
-          const working =
-            mode === 'analysis'
-
-
-          const route =
-            routes[i]
-
-
-          const walkingTarget =
-            route[
-              routeIndex[i]
-            ]
-
-
-          const start =
-            route[
-              (routeIndex[i] + 2) % 3
-            ]
-
-
-          return (
-
-            <group key={a.id}>
-
-              <Desk
-                position={desk}
-                tf={a.tf}
-                color={a.color}
-                selected={
-                  selected === a.id
-                }
-                working={working}
-                onSelect={() =>
-                  setSelected(
-                    selected === a.id
-                      ? null
-                      : a.id
-                  )
-                }
-              />
-
-
-              <Chair
-                position={[
-                  desk[0],
-                  0,
-                  desk[2] + 0.72
-                ]}
-              />
-
-
-              {working ? (
-
-                <WalkingPerson
-                  start={[
-                    desk[0],
-                    0,
-                    desk[2] + 0.48
-                  ]}
-                  target={[
-                    desk[0],
-                    0,
-                    desk[2] + 0.48
-                  ]}
-                  color={[
-                    '#d8a27e',
-                    '#b97c5c',
-                    '#e0b18c',
-                    '#c98d6d',
-                    '#d29b82'
-                  ][i]}
-                  state="working"
-                  speech={
-                    speechPerson === a.id
-                      ? speechText
-                      : null
-                  }
-                  onClick={() =>
-                    setSelected(
-                      selected === a.id
-                        ? null
-                        : a.id
-                    )
-                  }
-                />
-
-              ) : (
-
-                <WalkingPerson
-                  start={start}
-                  target={walkingTarget}
-                  color={[
-                    '#d8a27e',
-                    '#b97c5c',
-                    '#e0b18c',
-                    '#c98d6d',
-                    '#d29b82'
-                  ][i]}
-                  state={
-                    speechPerson === a.id
-                      ? 'coffee'
-                      : 'walking'
-                  }
-                  speech={
-                    speechPerson === a.id
-                      ? speechText
-                      : null
-                  }
-                  onClick={() =>
-                    setSelected(
-                      selected === a.id
-                        ? null
-                        : a.id
-                    )
-                  }
-                />
-
-              )}
-
-            </group>
-
-          )
-        }
-      )}
-
+      {people.map((person, index) => (
+        <Person
+          key={person.id}
+          index={index}
+          position={[
+            deskPositions[index][0],
+            0,
+            deskPositions[index][2] + 1.3,
+          ]}
+          target={person.target}
+          color={person.color}
+          shirt={person.shirt}
+          talking={person.talking}
+          speech={person.speech}
+          sitting={person.sitting}
+          coffee={person.coffee}
+        />
+      ))}
 
       {/* =================================================
           LEADER
-      ================================================= */}
+          ================================================= */}
 
-      <Leader
-        mode={mode}
+      <Person
+        index={99}
+        leader
+        position={[0, 0, -0.55]}
+        target={leaderTarget}
+        color="#e7c26a"
+        shirt="#8b6928"
+        talking={leaderTalking}
+        speech={
+          briefing
+            ? "SEND SIGNAL TO TELEGRAM NOW!"
+            : "Semua tetap standby."
+        }
+        sitting={false}
+        coffee={false}
       />
 
-
       {/* =================================================
-          SHADOWS
-      ================================================= */}
+          LIGHTING
+          ================================================= */}
+
+      <ambientLight intensity={0.55} />
+
+      <directionalLight
+        position={[0, 6, 3]}
+        intensity={1.4}
+        color="#f4dfad"
+        castShadow
+      />
+
+      <pointLight
+        position={[0, 2.4, -2.7]}
+        intensity={2}
+        distance={8}
+        color="#d2a74f"
+      />
 
       <ContactShadows
-        position={[
-          0,
-          -0.015,
-          0
-        ]}
-        opacity={0.38}
+        position={[0, 0.01, 0]}
+        opacity={0.45}
         scale={13}
-        blur={2.7}
+        blur={2.4}
         far={5}
       />
 
-
       {/* =================================================
           CAMERA
-      ================================================= */}
+          ================================================= */}
 
       <OrbitControls
-        makeDefault
-        target={[
-          0,
-          1,
-          -0.5
-        ]}
-        minDistance={5}
-        maxDistance={13}
-        maxPolarAngle={
-          Math.PI / 2.05
-        }
-        minPolarAngle={0.32}
+        enablePan={false}
+        minDistance={7}
+        maxDistance={15}
+        minPolarAngle={0.65}
+        maxPolarAngle={1.4}
+        target={[0, 0.7, 0]}
       />
-
     </>
-  )
+  );
 }
 
-
 /* =========================================================
-   APP
-========================================================= */
+   MAIN APP
+   ========================================================= */
 
 export default function App() {
+  const clock = useJakartaClock();
 
-  const clock =
-    useJakartaClock()
-
-
-  const mode =
-    getOfficeMode(clock)
-
-
-  const [
-    selected,
-    setSelected
-  ] = useState(null)
-
-
-  const [
-    chatIndex,
-    setChatIndex
-  ] = useState(0)
-
-
-  const [
-    sceneReady,
-    setSceneReady
-  ] = useState(false)
-
-
-  const [
-    toast,
-    setToast
-  ] = useState(false)
-
-
-  /* =======================================================
-     CHAT PERSON
-  ======================================================= */
-
-  const currentChat =
-    CHAT_LINES[chatIndex]
-
-
-  const speechPerson =
-    currentChat.person
-
-
-  const speechText =
-    currentChat.text
-
-
-  /* =======================================================
-     CHAT ROTATION
-  ======================================================= */
+  const [chatIndex, setChatIndex] = useState(0);
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setChatIndex((prev) => (prev + 1) % CHAT_LINES.length);
+    }, 4200);
 
-    const id =
-      setInterval(() => {
+    return () => clearInterval(timer);
+  }, []);
 
-        setChatIndex(
-          i =>
-            (i + 1) %
-            CHAT_LINES.length
-        )
+  const briefing =
+    clock.minute === 0 &&
+    clock.second < 18;
 
-      }, 4200)
+  const working = clock.minute >= 30;
 
+  let currentStatus = "SOCIAL & WALKING";
 
-    return () =>
-      clearInterval(id)
-
-  }, [])
-
-
-  /* =======================================================
-     BRIEFING
-  ======================================================= */
-
-  const [
-    lastMinute,
-    setLastMinute
-  ] = useState('')
-
-
-  useEffect(() => {
-
-    const key =
-      `${clock.weekday}-${clock.hour}-${clock.minute}`
-
-
-    if (
-      clock.minute === 0 &&
-      clock.second < 2 &&
-      key !== lastMinute
-    ) {
-
-      setLastMinute(key)
-
-      setToast(true)
-
-
-      const id =
-        setTimeout(() => {
-
-          setToast(false)
-
-        }, 15000)
-
-
-      return () =>
-        clearTimeout(id)
-
-    }
-
-  }, [
-    clock.weekday,
-    clock.hour,
-    clock.minute,
-    clock.second,
-    lastMinute
-  ])
-
-
-  const current =
-    TEAM.find(
-      t =>
-        t.id === selected
-    )
-
+  if (briefing) {
+    currentStatus = "HOURLY BRIEFING";
+  } else if (working) {
+    currentStatus = "AT DESK";
+  }
 
   return (
+    <div className="xau-app">
+      <style>{GLOBAL_CSS}</style>
 
-    <main className="app-shell">
-
-
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* ===================================================
+          TOPBAR
+          =================================================== */}
 
       <header className="topbar">
-
-        <a
-          className="brand"
-          href="#"
-        >
-
-          <span className="brand-mark">
-            Au
-          </span>
-
-          <span>
-
-            <b>
-              XAU AI
-            </b>
-
-            <small>
-              SMC GOLD ·
-              INTELLIGENCE OFFICE
-            </small>
-
-          </span>
-
-        </a>
-
-
-        <div className="top-status">
-
-          <span className="live-dot" />
-
-          SYSTEM ONLINE
-
-          <i />
-
-          <Clock3 size={15} />
-
-          {clock.time}
-          {' '}
-          WIB
-
-        </div>
-
-
-        <a
-          className="join-button"
-          href={TELEGRAM_URL}
-          target="_blank"
-          rel="noreferrer"
-        >
-
-          Join Telegram
-
-          <ArrowUpRight
-            size={16}
-          />
-
-        </a>
-
-      </header>
-
-
-      {/* =================================================
-          HERO
-      ================================================= */}
-
-      <section className="hero">
-
-
-        <div className="hero-copy">
-
-          <div className="eyebrow">
-
-            <span />
-
-            AI-POWERED
-            TRADING ENVIRONMENT
-
+        <div className="brand">
+          <div className="brand-mark">
+            <Bot size={19} />
           </div>
 
+          <div>
+            <div className="brand-title">
+              XAU AI SMC GOLD
+            </div>
+
+            <div className="brand-sub">
+              VISUAL AI OFFICE
+            </div>
+          </div>
+        </div>
+
+        <div className="online">
+          <span className="online-dot" />
+          SYSTEM ONLINE
+        </div>
+      </header>
+
+      {/* ===================================================
+          HERO
+          =================================================== */}
+
+      <section className="hero">
+        <div>
+          <div className="eyebrow">
+            <Radio size={12} />
+            LIVE OFFICE SIMULATION
+          </div>
 
           <h1>
-
-            Meet the intelligence
-
+            Inside the
             <br />
-
-            <em>
-              behind every signal.
-            </em>
-
+            <span className="gold-text">
+              XAU AI SMC
+            </span>{" "}
+            Desk.
           </h1>
 
-
-          <p>
-
-            A virtual trading floor where
-            specialized AI analysts monitor
-            XAUUSD across multiple
-            timeframes.
-
-            <br /><br />
-
-            Watch the team move around the
-            office, communicate, take coffee
-            breaks and return to their
-            workstations.
-
+          <p className="hero-copy">
+            Sebuah visualisasi kantor AI yang hidup.
+            Tim berjalan, berdiskusi, memantau chart,
+            mengambil kopi, kemudian kembali ke meja
+            pada jadwal briefing setiap jam.
           </p>
 
-
           <div className="hero-actions">
-
             <a
-              className="primary-btn"
+              className="cta"
               href={TELEGRAM_URL}
               target="_blank"
               rel="noreferrer"
             >
-
-              Explore Telegram
-
-              <ArrowUpRight
-                size={17}
-              />
-
+              Open Telegram
+              <ArrowUpRight size={15} />
             </a>
 
-
-            <span className="secondary-note">
-
-              <ShieldCheck
-                size={16}
-              />
-
-              Visual office simulation
-
-            </span>
-
+            <a
+              className="cta secondary"
+              href="#team"
+            >
+              View Team
+            </a>
           </div>
-
-
-          <div className="mini-stats">
-
-            <div>
-
-              <b>
-                05
-              </b>
-
-              <span>
-                AI ANALYSTS
-              </span>
-
-            </div>
-
-
-            <div>
-
-              <b>
-                04
-              </b>
-
-              <span>
-                TIMEFRAMES
-              </span>
-
-            </div>
-
-
-            <div>
-
-              <b>
-                24/5
-              </b>
-
-              <span>
-                OFFICE CYCLE
-              </span>
-
-            </div>
-
-          </div>
-
         </div>
 
-
-        {/* =================================================
-            SCENE
-        ================================================= */}
-
-        <div className="scene-wrap">
-
-
-          <div className="scene-topline">
-
-            <span>
-
-              <Radio
-                size={14}
-              />
-
-              LIVE OFFICE VIEW
-
-            </span>
-
-
-            <span>
-
-              ASIA/JAKARTA · WIB
-
-            </span>
-
-          </div>
-
-
-          <Canvas
-            shadows
-            camera={{
-              position: [
-                7.5,
-                6.3,
-                8.6
-              ],
-              fov: 38
-            }}
-            onCreated={() =>
-              setSceneReady(true)
-            }
-            dpr={[
-              1,
-              1.7
-            ]}
-          >
-
-            <OfficeScene
-              mode={mode}
-              selected={selected}
-              setSelected={setSelected}
-              speechPerson={
-                speechPerson
-              }
-              speechText={
-                speechText
-              }
-            />
-
-          </Canvas>
-
-
-          {!sceneReady && (
-
-            <div className="scene-loading">
-
-              Preparing virtual office…
-
-            </div>
-
-          )}
-
-
-          <div className="scene-hint">
-
-            DRAG TO ROTATE ·
-            SCROLL TO ZOOM ·
-            SELECT AN ANALYST
-
-          </div>
-
-
-          {/* SELECTED CARD */}
-
-          {current && (
-
-            <div className="analyst-card">
-
-              <button
-                onClick={() =>
-                  setSelected(null)
-                }
-              >
-                ×
-              </button>
-
-
-              <div className="analyst-card-icon">
-
-                <Bot
-                  size={22}
-                />
-
+        <div className="hero-panel">
+          <div className="clock-card">
+            <div>
+              <div className="clock-label">
+                Jakarta Office Time
               </div>
 
-
-              <b>
-                {current.name}
-              </b>
-
-
-              <span>
-                XAUUSD ·
-                {' '}
-                {current.tf}
-              </span>
-
-
-              <small>
-                {current.task}
-              </small>
-
-
-              <label>
-
-                <i />
-
-                SIMULATED ACTIVITY
-
-              </label>
-
+              <div className="clock-value">
+                {String(clock.hour).padStart(2, "0")}:
+                {String(clock.minute).padStart(2, "0")}:
+                {String(clock.second).padStart(2, "0")}
+              </div>
             </div>
 
-          )}
-
-
-          {toast && (
-
-            <div className="dispatch-toast">
-
-              <span className="live-dot" />
-
-              HOURLY TEAM BRIEFING
-
+            <div className="clock-zone">
+              WIB
             </div>
-
-          )}
-
-        </div>
-
-      </section>
-
-
-      {/* =================================================
-          WORKSPACE
-      ================================================= */}
-
-      <section className="workspace">
-
-        <div className="section-heading">
-
-          <div>
-
-            <span className="eyebrow">
-
-              THE TRADING FLOOR
-
-            </span>
-
-
-            <h2>
-
-              One team.
-              Multiple perspectives.
-
-            </h2>
-
           </div>
 
+          <div className="system-row">
+            <div className="system-stat">
+              <strong>05</strong>
+              <span>AI Roles</span>
+            </div>
 
-          <p>
+            <div className="system-stat">
+              <strong>04</strong>
+              <span>Timeframes</span>
+            </div>
 
-            Each workstation represents
-            a dedicated intelligence role.
-            Office movement and dialogue
-            are simulated for the website.
+            <div className="system-stat">
+              <strong>24/5</strong>
+              <span>Office Cycle</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          </p>
+      {/* ===================================================
+          SCENE
+          =================================================== */}
 
+      <section className="scene-wrap">
+        <div className="scene-label">
+          OFFICE STATUS ·{" "}
+          <strong>{currentStatus}</strong>
         </div>
 
+        {briefing && (
+          <div className="briefing-alert">
+            HOURLY BRIEFING · LEADER INSTRUCTING TEAM
+          </div>
+        )}
+
+        <Canvas
+          shadows
+          camera={{
+            position: [9, 7.4, 10],
+            fov: 43,
+          }}
+          dpr={[1, 1.6]}
+        >
+          <color attach="background" args={["#080a0d"]} />
+
+          <OfficeScene clock={clock} />
+        </Canvas>
+      </section>
+
+      {/* ===================================================
+          TEAM
+          =================================================== */}
+
+      <section
+        className="below-scene"
+        id="team"
+      >
+        <div className="section-head">
+          <div>
+            <div className="section-kicker">
+              AI TEAM
+            </div>
+
+            <h2 className="section-title">
+              Five specialized roles.
+            </h2>
+          </div>
+
+          <p className="section-copy">
+            Setiap karakter memiliki peran visual
+            berbeda dalam simulasi kantor XAU AI SMC.
+          </p>
+        </div>
 
         <div className="team-grid">
+          {TEAM.map((member) => (
+            <div
+              className="team-card"
+              key={member.id}
+            >
+              <div className="team-top">
+                <span
+                  className="role-dot"
+                  style={{
+                    background: member.color,
+                    color: member.color,
+                  }}
+                />
 
-          {TEAM.map(
-            a => (
+                <span className="team-tf">
+                  {member.tf}
+                </span>
+              </div>
 
-              <article
-                className="team-card"
-                key={a.id}
-                onClick={() =>
-                  setSelected(a.id)
-                }
-              >
+              <h3>{member.name}</h3>
 
-                <div className="team-card-top">
-
-                  <span className="avatar">
-
-                    {a.id ===
-                    'fundamental'
-
-                      ? (
-                        <BarChart3
-                          size={22}
-                        />
-                      )
-
-                      : (
-                        <Bot
-                          size={22}
-                        />
-                      )}
-
-                  </span>
-
-
-                  <span className="tf-pill">
-
-                    {a.tf}
-
-                  </span>
-
-                </div>
-
-
-                <h3>
-                  {a.name}
-                </h3>
-
-
-                <p>
-                  {a.task}
-                </p>
-
-
-                <div className="card-status">
-
-                  <i />
-
-                  At workstation
-
-                  <span>
-                    ·
-                  </span>
-
-                  XAUUSD
-
-                </div>
-
-              </article>
-
-            )
-          )}
-
+              <p>
+                {member.role}
+              </p>
+            </div>
+          ))}
         </div>
 
-      </section>
-
-
-      {/* =================================================
-          STATUS
-      ================================================= */}
-
-      <section className="status-section">
-
-
-        <div className="status-card">
-
-          <Activity
-            size={18}
-          />
-
-          <div>
-
-            <b>
-              Current activity
-            </b>
-
-            <span>
-
-              {mode ===
-                'discussion' &&
-                'Team members are walking around and discussing the market.'}
-
-              {mode ===
-                'analysis' &&
-                'Analysts are seated at their workstations.'}
-
-              {mode ===
-                'briefing' &&
-                'The team leader is conducting the hourly briefing.'}
-
-            </span>
-
-          </div>
-
-        </div>
-
-
-        <div className="status-card">
-
-          <Users
-            size={18}
-          />
-
-          <div>
-
-            <b>
-              Team
-            </b>
-
-            <span>
-              5 analysts ·
-              1 team leader
-            </span>
-
-          </div>
-
-        </div>
-
-
-        <div className="status-card">
-
-          <Coffee
-            size={18}
-          />
-
-          <div>
-
-            <b>
-              Coffee station
-            </b>
-
-            <span>
-              Always available
-              for the team
-            </span>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* =================================================
-          COMMUNICATION
-      ================================================= */}
-
-      <section className="activity-section">
-
-
-        <div className="activity-head">
-
-          <div>
-
-            <span className="eyebrow">
-
-              TEAM COMMS
-
-            </span>
-
-
-            <h2>
-
-              Inside the office
-
-            </h2>
-
-          </div>
-
-
-          <span className="live-label">
-
-            <i />
-
-            SIMULATED LIVE FEED
-
-          </span>
-
-        </div>
-
-
-        <div className="chat-panel">
-
-          <div className="chat-avatar">
-
-            <MessageSquare
-              size={19}
-            />
-
-          </div>
-
-
-          <div className="chat-body">
-
-            <div>
-
-              <b>
-                {
-                  CHAT_LINES[
-                    chatIndex
-                  ].person
-                }
-              </b>
-
-
-              <time>
-                {clock.time}
-                {' '}
-                WIB
-              </time>
-
+        {/* =================================================
+            ACTIVITY
+            ================================================= */}
+
+        <div className="activity">
+          <div className="activity-card">
+            <div className="activity-icon">
+              <Clock3 size={17} />
             </div>
 
+            <h3>
+              Hourly Briefing
+            </h3>
 
             <p>
-
-              {
-                CHAT_LINES[
-                  chatIndex
-                ].text
-              }
-
+              Tepat pada menit 00, seluruh anggota
+              kembali ke posisi masing-masing dan
+              leader memberikan instruksi:
+              <strong>
+                {" "}
+                SEND SIGNAL TO TELEGRAM NOW!
+              </strong>
             </p>
-
           </div>
 
+          <div className="activity-card">
+            <div className="activity-icon">
+              <Coffee size={17} />
+            </div>
 
-          <span className="typing">
+            <h3>
+              Office Activity
+            </h3>
 
-            <i />
-            <i />
-            <i />
-
-          </span>
-
-        </div>
-
-
-        <div className="schedule-note">
-
-          <Clock3
-            size={17}
-          />
-
-
-          <div>
-
-            <b>
-              Office activity cycle
-            </b>
-
-            <span>
-
-              00–29 discussion &
-              movement ·
-              30–59 analysis
-
-            </span>
-
+            <p>
+              Di antara briefing, karakter bergerak
+              di dalam kantor, berbicara, memantau
+              chart, dan sesekali pergi mengambil kopi.
+            </p>
           </div>
 
+          <div className="activity-card">
+            <div className="activity-icon">
+              <Monitor size={17} />
+            </div>
 
-          <span className="schedule-tag">
+            <h3>
+              Moving Charts
+            </h3>
 
-            WIB
+            <p>
+              Monitor setiap meja memiliki chart
+              bergerak secara visual agar suasana
+              kantor terasa lebih hidup.
+            </p>
+          </div>
 
-          </span>
+          <div className="activity-card">
+            <div className="activity-icon">
+              <ShieldCheck size={17} />
+            </div>
 
+            <h3>
+              Visual Only
+            </h3>
+
+            <p>
+              Website ini adalah landing page dan
+              visual simulation. Analisa market dan
+              signal sebenarnya tetap dilakukan oleh
+              sistem Telegram terpisah.
+            </p>
+          </div>
         </div>
-
       </section>
 
+      {/* ===================================================
+          LIVE CHAT
+          =================================================== */}
 
-      {/* =================================================
+      <section className="below-scene">
+        <div className="activity-card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 10,
+            }}
+          >
+            <MessageSquare size={17} color="#dcb65e" />
+
+            <span
+              style={{
+                color: "#dcb65e",
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: ".13em",
+              }}
+            >
+              LIVE OFFICE CHAT
+            </span>
+          </div>
+
+          <div
+            style={{
+              color: "#e7e7e1",
+              fontSize: 13,
+            }}
+          >
+            {CHAT_LINES[chatIndex]}
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================
           FOOTER
-      ================================================= */}
+          =================================================== */}
 
-      <footer>
+      <footer className="footer">
+        <div>
+          © {clock.year} XAU AI SMC GOLD
+        </div>
 
-        <a
-          className="brand footer-brand"
-          href="#"
-        >
-
-          <span className="brand-mark">
-            Au
-          </span>
-
-
-          <span>
-
-            <b>
-              XAU AI SMC GOLD
-            </b>
-
-            <small>
-              TRADING INTELLIGENCE OFFICE
-            </small>
-
-          </span>
-
-        </a>
-
-
-        <p>
-
-          © {new Date().getFullYear()}
-          {' '}
-          XAU AI.
-          Virtual office experience.
-
-        </p>
-
-
-        <span className="footer-disclaimer">
-
-          Website visuals are simulated.
-          Trading analysis and signals are
-          provided separately.
-
-        </span>
-
+        <div>
+          VISUAL OFFICE SIMULATION · ASIA/JAKARTA
+        </div>
       </footer>
-
-    </main>
-  )
+    </div>
+  );
 }
