@@ -1,25 +1,45 @@
 
-{
-  "name": "xau-ai-landing",
-  "private": true,
-  "version": "1.2.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "@react-three/drei": "^9.99.0",
-    "@react-three/fiber": "^8.15.19",
-    "express": "^4.21.2",
-    "pg": "^8.16.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "three": "^0.160.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.0",
-    "vite": "^5.4.0"
+app.post("/api/clicks", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+
+  const { label } = req.body || {};
+
+  if (typeof label !== "string" || !allowedLabels.has(label)) {
+    return res.status(400).json({
+      success: false,
+      message: "Label klik tidak valid.",
+    });
   }
-}
+
+  let newTotal;
+
+  const operation = writeQueue.then(async () => {
+    totalClicks += 1;
+
+    try {
+      await saveCounter();
+      newTotal = totalClicks;
+    } catch (error) {
+      totalClicks -= 1;
+      throw error;
+    }
+  });
+
+  writeQueue = operation.catch(() => {});
+
+  try {
+    await operation;
+
+    return res.json({
+      success: true,
+      total: newTotal,
+    });
+  } catch (error) {
+    console.error("Gagal menyimpan klik:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Gagal menyimpan jumlah klik.",
+    });
+  }
+});
