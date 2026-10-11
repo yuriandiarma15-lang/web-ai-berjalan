@@ -13,8 +13,6 @@ const BROKERS = [
   { name: "Exness", logo: "/logos/exness.png" },
 ];
 
-const FEATURE_ICONS = ["◈", "◇", "◎", "↗"];
-
 const track = (label) => () => {
   try {
     window.gtag("event", "telegram_cta_click", { event_category: "conversion", event_label: label });
@@ -162,57 +160,15 @@ export default function App() {
           <p className="ai-description">{t.aiDescription}</p>
         </section>
 
-        {/* 01 FITUR */}
-        <section className="section reveal delay-2">
-          <SectionHeader n="01" title={t.featureSectionTitle} />
-          <div className="feature-grid">
-            {[1, 2, 3, 4].map((n) => (
-              <div className="feature-card" key={n}>
-                <div className="feature-icon">{FEATURE_ICONS[n - 1]}</div>
-                <h3>{t[`feature${n}Title`]}</h3>
-                <p>{t[`feature${n}Text`]}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* 02 CARA KERJA */}
-        <section className="section reveal delay-3">
-          <SectionHeader n="02" title={t.howSectionTitle} />
-          <div className="steps">
-            {[1, 2, 3, 4].map((n) => (
-              <div className="step" key={n}>
-                <div className="step-number">{"0" + n}</div>
-                <div className="step-content">
-                  <div className="step-title">{t[`step${n}Title`]}</div>
-                  <div className="step-description">{t[`step${n}Text`]}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="signal-box">
-            <div className="signal-header">
-              <span className="signal-label">SIGNAL PREVIEW</span>
-              <span className="signal-status">AI SYSTEM</span>
-            </div>
-            <div className="signal-content">
-              <div className="signal-item"><span>SYMBOL</span><strong className="signal-gold">XAUUSD</strong></div>
-              <div className="signal-item"><span>DIRECTION</span><strong className="signal-buy">BUY</strong></div>
-              <div className="signal-item"><span>DELIVERY</span><strong>TELEGRAM</strong></div>
-            </div>
-          </div>
-        </section>
-
-        {/* 03 OFFICE AGENT AI */}
+        {/* 01 OFFICE AGENT AI */}
         <section className="section">
-          <SectionHeader n="03" title={t.officeSectionTitle} />
+          <SectionHeader n="01" title={t.officeSectionTitle} />
           <Office intro={t.officeIntro} />
         </section>
 
-        {/* 04 REGISTRASI */}
+        {/* 02 REGISTRASI */}
         <section className="section">
-          <SectionHeader n="04" title={t.regTitle} />
+          <SectionHeader n="02" title={t.regTitle} />
 
           <div className="reg-list">
             {/* OPSI 1 : BERBAYAR */}
@@ -253,9 +209,9 @@ export default function App() {
           </div>
         </section>
 
-        {/* 05 SYARAT */}
+        {/* 03 SYARAT */}
         <section className="section">
-          <SectionHeader n="05" title={t.requirementTitle} />
+          <SectionHeader n="03" title={t.requirementTitle} />
           <div className="requirements">
             {[1, 2, 3, 4].map((n) => (
               <div className="requirement" key={n}>
