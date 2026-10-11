@@ -1,114 +1,115 @@
-import express from "express";
-import Database from "better-sqlite3";
-import path from "node:path";
-import fs from "node:fs";
 
+import express from "express";
+import pg from "pg";
+import path from "node:path";
+
+const { Pool } = pg;
 const app = express();
 const PORT = process.env.PORT || 4173;
-
-// =====================================================
-// KONFIGURASI DATABASE
-// Railway: atur DATA_DIR=/data dan pasang Volume /data
-// Lokal: database disimpan di folder ./data
-// =====================================================
-
-const DATA_DIR =
-  process.env.DATA_DIR ||
-  (process.env.RAILWAY_ENVIRONMENT
-    ? "/data"
-    : path.join(process.cwd(), "data"));
-
-fs.mkdirSync(DATA_DIR, { recursive: true });
-
-const db = new Database(
-  path.join(DATA_DIR, "xau-ai-clicks.sqlite")
-);
-
-db.pragma("journal_mode = WAL");
-db.pragma("busy_timeout = 5000");
-
-// =====================================================
-// TABEL JUMLAH KLIK
-// Angka awal: 1459
-// =====================================================
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS user_counter (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    total INTEGER NOT NULL DEFAULT 1459
-  );
-
-  CREATE TABLE IF NOT EXISTS click_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    label TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-`);
-
-db.prepare(`
-  INSERT OR IGNORE INTO user_counter (id, total)
-  VALUES (1, 1459)
-`).run();
-
-// =====================================================
-// MIDDLEWARE
-// =====================================================
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "10kb" }));
 
-// =====================================================
-// API: AMBIL TOTAL KLIK
+// ==========================================
+// DATABASE POSTGRESQL RAILWAY
+// ==========================================
+
+if (!process.env.DATABASE_URL) {
+  console.error("ERROR: DATABASE_URL belum dikonfigurasi.");
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_SSL === "true"
+    ? { rejectUnauthorized: false }
+    : undefined,
+  max: 5,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+});
+
+pool.on("error", (error) => {
+  console.error("PostgreSQL pool error:", error);
+});
+
+// ==========================================
+// INISIALISASI TABEL
+// ==========================================
+
+async function initializeDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_counter (
+      id INTEGER PRIMARY KEY,
+      total BIGINT NOT NULL DEFAULT 1459
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS click_logs (
+      id BIGSERIAL PRIMARY KEY,
+      label VARCHAR(20) NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  // Angka awal hanya digunakan ketika baris belum ada.
+  // Restart/deploy tidak mengembalikan angka yang sudah tersimpan.
+  await pool.query(`
+    INSERT INTO user_counter (id, total)
+    VALUES (1, 1459)
+    ON CONFLICT (id) DO NOTHING
+  `);
+
+  console.log("PostgreSQL siap.");
+}
+
+// ==========================================
+// AMBIL TOTAL KLIK
 // GET /api/clicks
-// =====================================================
+// ==========================================
 
-app.get("/api/clicks", (req, res) => {
-  const row = db.prepare(`
-    SELECT total
-    FROM user_counter
-    WHERE id = 1
-  `).get();
-
+app.get("/api/clicks", async (req, res) => {
   res.set("Cache-Control", "no-store");
 
-  res.json({
-    success: true,
-    total: row.total,
-  });
+  try {
+    const result = await pool.query(`
+      SELECT total
+      FROM user_counter
+      WHERE id = 1
+    `);
+
+    if (result.rowCount === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Penghitung belum diinisialisasi.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      total: Number(result.rows[0].total),
+    });
+  } catch (error) {
+    console.error("Gagal mengambil total klik:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengambil total klik.",
+    });
+  }
 });
 
-// =====================================================
-// API: TAMBAH JUMLAH KLIK
+// ==========================================
+// TAMBAH KLIK SECARA ATOMIK
 // POST /api/clicks
-// Label yang diterima: paid, free, admin
-// =====================================================
+// ==========================================
 
-const allowedLabels = new Set([
-  "paid",
-  "free",
-  "admin",
-]);
+const allowedLabels = new Set(["paid", "free", "admin"]);
 
-const recordClick = db.transaction((label) => {
-  db.prepare(`
-    INSERT INTO click_logs (label)
-    VALUES (?)
-  `).run(label);
+app.post("/api/clicks", async (req, res) => {
+  res.set("Cache-Control", "no-store");
 
-  db.prepare(`
-    UPDATE user_counter
-    SET total = total + 1
-    WHERE id = 1
-  `).run();
-
-  return db.prepare(`
-    SELECT total
-    FROM user_counter
-    WHERE id = 1
-  `).get().total;
-});
-
-app.post("/api/clicks", (req, res) => {
   const { label } = req.body || {};
 
   if (
@@ -121,28 +122,58 @@ app.post("/api/clicks", (req, res) => {
     });
   }
 
-  try {
-    const total = recordClick(label);
+  let client;
 
-    res.set("Cache-Control", "no-store");
+  try {
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+
+    await client.query(
+      `INSERT INTO click_logs (label) VALUES ($1)`,
+      [label]
+    );
+
+    const result = await client.query(`
+      UPDATE user_counter
+      SET total = total + 1
+      WHERE id = 1
+      RETURNING total
+    `);
+
+    if (result.rowCount === 0) {
+      throw new Error("Baris penghitung tidak ditemukan.");
+    }
+
+    await client.query("COMMIT");
 
     return res.status(200).json({
       success: true,
-      total,
+      total: Number(result.rows[0].total),
     });
   } catch (error) {
+    if (client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // Koneksi mungkin sudah terputus.
+      }
+    }
+
     console.error("Gagal menyimpan klik:", error);
 
     return res.status(500).json({
       success: false,
       message: "Gagal menyimpan jumlah klik.",
     });
+  } finally {
+    client?.release();
   }
 });
 
-// =====================================================
-// SERVE WEBSITE REACT / VITE
-// =====================================================
+// ==========================================
+// SERVE WEBSITE VITE
+// ==========================================
 
 const DIST_DIR = path.join(process.cwd(), "dist");
 
@@ -150,27 +181,38 @@ app.use(express.static(DIST_DIR));
 
 app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api/")) {
-    return next();
+    return res.status(404).json({
+      success: false,
+      message: "API tidak ditemukan.",
+    });
   }
 
-  res.sendFile(
-    path.join(DIST_DIR, "index.html"),
-    (error) => {
-      if (error) next(error);
-    }
-  );
+  res.sendFile(path.join(DIST_DIR, "index.html"), (error) => {
+    if (error) next(error);
+  });
 });
 
-// =====================================================
+// ==========================================
 // START SERVER
-// =====================================================
+// ==========================================
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("==================================");
-  console.log("XAU AI INTELLIGENCE");
-  console.log("CLICK COUNTER API AKTIF");
-  console.log(`PORT: ${PORT}`);
-  console.log(`DATABASE: ${path.join(DATA_DIR, "xau-ai-clicks.sqlite")}`);
-  console.log("TOTAL AWAL: 1459");
-  console.log("==================================");
-});
+async function startServer() {
+  try {
+    await initializeDatabase();
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log("==================================");
+      console.log("XAU AI INTELLIGENCE");
+      console.log("CLICK COUNTER API AKTIF");
+      console.log(`PORT: ${PORT}`);
+      console.log("DATABASE: PostgreSQL");
+      console.log("TOTAL AWAL: 1459");
+      console.log("==================================");
+    });
+  } catch (error) {
+    console.error("Gagal memulai server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
