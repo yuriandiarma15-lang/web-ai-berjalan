@@ -57,7 +57,6 @@ const EXTRA = {
     pricingTitle: "Pilih Paket",
     feature1: "Akses AI Trading Assistant",
     feature2: "Signal XAUUSD langsung ke Telegram",
-    feature3: "Akses Grup Diskusi & Sharing",
     popular: "TERLARIS",
     buy: "LANGGANAN SEKARANG",
     requirement2:
@@ -72,7 +71,6 @@ const EXTRA = {
     pricingTitle: "Choose a Plan",
     feature1: "AI Trading Assistant Access",
     feature2: "XAUUSD Signals Delivered to Telegram",
-    feature3: "Discussion & Sharing Group Access",
     popular: "BEST SELLER",
     buy: "SUBSCRIBE NOW",
     requirement2:
@@ -87,7 +85,6 @@ const EXTRA = {
     pricingTitle: "选择套餐",
     feature1: "AI Trading Assistant 使用权限",
     feature2: "XAUUSD 信号直接发送到 Telegram",
-    feature3: "讨论与分享群组权限",
     popular: "最受欢迎",
     buy: "立即订阅",
     requirement2:
@@ -442,12 +439,6 @@ export default function App() {
                 <div className="price-feature">
                   {x.brokerFeature}
                 </div>
-
-                {pkg.id !== "1month" && (
-                  <div className="price-feature">
-                    {x.feature3}
-                  </div>
-                )}
 
                 <a
                   className="reg-button"
