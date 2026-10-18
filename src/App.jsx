@@ -1,28 +1,105 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { translations } from "./i18n.js";
 import Office from "./Office.jsx";
 
 /* ================= KONFIGURASI ================= */
 const BOT_LINK = "https://t.me/Intradayxauusd_bot";
-const ADMIN_LINK = "https://t.me/AdmAIassistantGold";
 const PORTFOLIO_URL =
   "https://dashboardpanelporto-production.up.railway.app/";
 
 /* API penghitung klik menggunakan backend pada domain yang sama */
 const CLICK_API = "/api/clicks";
 
-/* ================= DATA BROKER ================= */
-const BROKERS = [
-  { name: "Valetax", logo: "/logos/valetax.png" },
-  { name: "HFM", logo: "/logos/hfm.png" },
-  { name: "Exness", logo: "/logos/exness.png" },
+/* ================= PAKET BERBAYAR =================
+   Semua tombol menuju @Intradayxauusd_bot.
+   Ubah nilai "start" jika kode paket di bot berbeda
+   (contoh: 1BLN, 6BLN, 12BLN, 3THN). */
+const PACKAGES = [
+  {
+    id: "1month",
+    start: "1month",
+    name: "STARTER",
+    price: "Rp299.000",
+    duration: { id: "1 Bulan", en: "1 Month", zh: "1个月" },
+  },
+  {
+    id: "6month",
+    start: "6month",
+    name: "PRO",
+    price: "Rp500.000",
+    duration: { id: "6 Bulan", en: "6 Months", zh: "6个月" },
+  },
+  {
+    id: "12month",
+    start: "12month",
+    name: "ELITE",
+    price: "Rp900.000",
+    featured: true,
+    duration: { id: "12 Bulan", en: "12 Months", zh: "12个月" },
+  },
+  {
+    id: "3year",
+    start: "permanent",
+    name: "PREMIUM",
+    price: "Rp1.500.000",
+    duration: { id: "3 Tahun", en: "3 Years", zh: "3年" },
+  },
 ];
+
+/* ================= TEKS TAMBAHAN (3 BAHASA) =================
+   Dipakai langsung di file ini, jadi i18n.js tidak perlu diubah. */
+const EXTRA = {
+  id: {
+    brokerTitle: "BEBAS BROKER TANPA IB",
+    brokerText:
+      "Gunakan broker apa pun yang menyediakan XAUUSD. Tidak perlu mendaftar lewat link IB tertentu.",
+    brokerFeature: "Bebas Broker, Tanpa IB",
+    pricingTitle: "Pilih Paket",
+    feature1: "Akses AI Trading Assistant",
+    feature2: "Signal XAUUSD langsung ke Telegram",
+    feature3: "Akses Grup Diskusi & Sharing",
+    popular: "TERLARIS",
+    buy: "LANGGANAN SEKARANG",
+    requirement2:
+      "Bebas menggunakan broker apa pun yang menyediakan instrumen XAUUSD, tanpa IB.",
+    mainCTA: "MULAI DENGAN AI TRADING",
+  },
+  en: {
+    brokerTitle: "ANY BROKER, NO IB",
+    brokerText:
+      "Use any broker that offers XAUUSD. No need to register through a specific IB link.",
+    brokerFeature: "Any Broker, No IB",
+    pricingTitle: "Choose a Plan",
+    feature1: "AI Trading Assistant Access",
+    feature2: "XAUUSD Signals Delivered to Telegram",
+    feature3: "Discussion & Sharing Group Access",
+    popular: "BEST SELLER",
+    buy: "SUBSCRIBE NOW",
+    requirement2:
+      "Use any broker that provides the XAUUSD instrument, no IB required.",
+    mainCTA: "START WITH AI TRADING",
+  },
+  zh: {
+    brokerTitle: "不限券商，无需 IB",
+    brokerText:
+      "可使用任何提供 XAUUSD 的券商，无需通过指定 IB 链接注册。",
+    brokerFeature: "不限券商，无需 IB",
+    pricingTitle: "选择套餐",
+    feature1: "AI Trading Assistant 使用权限",
+    feature2: "XAUUSD 信号直接发送到 Telegram",
+    feature3: "讨论与分享群组权限",
+    popular: "最受欢迎",
+    buy: "立即订阅",
+    requirement2:
+      "可使用任何提供 XAUUSD 产品的券商，无需 IB。",
+    mainCTA: "开始 AI 交易",
+  },
+};
 
 /* ================= TRACKING KLIK ================= */
 const track = (label) => () => {
-  // Label yang valid: paid, free, admin
-  const validLabels = ["paid", "free", "admin"];
+  // Hanya satu label karena semua jalur sekarang berbayar
+  const validLabels = ["paid"];
 
   if (!validLabels.includes(label)) {
     return;
@@ -206,6 +283,7 @@ export default function App() {
   });
 
   const t = translations[lang] || translations.id;
+  const x = EXTRA[lang] || EXTRA.id;
 
   /* ================= BAHASA ================= */
   useEffect(() => {
@@ -296,6 +374,21 @@ export default function App() {
           </p>
         </section>
 
+        {/* ================= BEBAS BROKER TANPA IB ================= */}
+        <section className="broker-banner reveal delay-1">
+          <div className="broker-icon">✓</div>
+
+          <div>
+            <div className="broker-title">
+              {x.brokerTitle}
+            </div>
+
+            <div className="broker-text">
+              {x.brokerText}
+            </div>
+          </div>
+        </section>
+
         {/* ================= 01 OFFICE AGENT AI ================= */}
         <section className="section">
           <SectionHeader
@@ -306,108 +399,67 @@ export default function App() {
           <Office intro={t.officeIntro} />
         </section>
 
-        {/* ================= 02 REGISTRASI ================= */}
+        {/* ================= 02 PAKET BERBAYAR ================= */}
         <section className="section">
           <SectionHeader
             n="02"
-            title={t.regTitle}
+            title={x.pricingTitle}
           />
 
           <div className="reg-list">
-            {/* OPSI 1: BERBAYAR */}
-            <div className="reg-card">
-              <div className="price-name">
-                {t.regPaidName}
-              </div>
-
-              <div className="price-duration">
-                {t.regPaidDuration}
-              </div>
-
-              <div className="price">
-                Rp5.000.000
-              </div>
-
-              <div className="price-feature">
-                {t.regPaidF1}
-              </div>
-
-              <div className="price-feature">
-                {t.regPaidF2}
-              </div>
-
-              <div className="price-feature">
-                {t.regPaidF3}
-              </div>
-
-              <a
-                className="reg-button"
-                href={BOT_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={track("paid")}
-              >
-                {t.regPaidBtn}
-              </a>
-            </div>
-
-            {/* OPSI 2: AFILIASI BROKER */}
-            <div className="reg-card featured">
-              <div className="price-badge">
-                {t.regFreeBadge}
-              </div>
-
-              <div className="price-name">
-                {t.regFreeName}
-              </div>
-
-              <div className="price-duration">
-                {t.regFreeDuration}
-              </div>
-
+            {PACKAGES.map((pkg) => (
               <div
-                className="price-feature"
-                style={{ marginTop: 8 }}
+                className={
+                  "reg-card" +
+                  (pkg.featured ? " featured" : "")
+                }
+                key={pkg.id}
               >
-                {t.regFreeF1}
+                {pkg.featured && (
+                  <div className="price-badge">
+                    {x.popular}
+                  </div>
+                )}
+
+                <div className="price-name">
+                  {pkg.name}
+                </div>
+
+                <div className="price-duration">
+                  {pkg.duration[lang] || pkg.duration.id}
+                </div>
+
+                <div className="price">{pkg.price}</div>
+
+                <div className="price-feature">
+                  {x.feature1}
+                </div>
+
+                <div className="price-feature">
+                  {x.feature2}
+                </div>
+
+                <div className="price-feature">
+                  {x.brokerFeature}
+                </div>
+
+                {pkg.id !== "1month" && (
+                  <div className="price-feature">
+                    {x.feature3}
+                  </div>
+                )}
+
+                <a
+                  className="reg-button"
+                  href={`${BOT_LINK}?start=${pkg.start}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={track("paid")}
+                >
+                  {x.buy}
+                </a>
               </div>
-
-              <div className="broker-row">
-                {BROKERS.map((broker) => (
-                  <span
-                    className="broker-chip"
-                    key={broker.name}
-                  >
-                    <img
-                      src={broker.logo}
-                      alt={broker.name}
-                      width="22"
-                      height="22"
-                      loading="lazy"
-                    />
-
-                    {broker.name}
-                  </span>
-                ))}
-              </div>
-
-              <div
-                className="reg-note"
-                dangerouslySetInnerHTML={{
-                  __html: t.regFreeNote,
-                }}
-              />
-
-              <a
-                className="reg-button outline"
-                href={ADMIN_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={track("free")}
-              >
-                {t.regFreeBtn}
-              </a>
-            </div>
+            ))}
           </div>
         </section>
 
@@ -429,7 +481,9 @@ export default function App() {
                 </div>
 
                 <div className="requirement-text">
-                  {t[`requirement${number}`]}
+                  {number === 2
+                    ? x.requirement2
+                    : t[`requirement${number}`]}
                 </div>
               </div>
             ))}
@@ -440,12 +494,12 @@ export default function App() {
         <section className="main-cta">
           <a
             className="cta-button"
-            href={ADMIN_LINK}
+            href={BOT_LINK}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={track("admin")}
+            onClick={track("paid")}
           >
-            {t.mainCTA}
+            {x.mainCTA}
           </a>
 
           <a
