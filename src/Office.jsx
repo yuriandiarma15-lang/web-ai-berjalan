@@ -981,7 +981,7 @@ function OfficeScene({
           </div>
 
           <div className="user-counter-number">
-            1.598
+            1.702
           </div>
 
           <div className="user-counter-status">
