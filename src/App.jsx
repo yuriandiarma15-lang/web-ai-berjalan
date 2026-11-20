@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { translations } from "./i18n.js";
 import Office from "./Office.jsx";
@@ -6,6 +5,8 @@ import Office from "./Office.jsx";
 /* ================= KONFIGURASI ================= */
 
 const BOT_LINK = "https://t.me/Intradayxauusd_bot";
+
+const ADMIN_LINK = "https://t.me/AdmAIassistantGold";
 
 const PORTFOLIO_URL =
   "https://dashboardpanelporto-production.up.railway.app/";
@@ -180,7 +181,11 @@ const EXTRA = {
     requirement2:
       "Bebas menggunakan broker apa pun yang menyediakan instrumen XAUUSD, tanpa IB.",
 
-    mainCTA: "MULAI DENGAN AI TRADING",
+    mainCTA:
+      "CHAT KE TELEGRAM ADMIN UNTUK KONSULTASI (@AdmAIassistantGold)",
+
+    portfolioCTA:
+      "KLIK DI SINI — LIHAT PORTOFOLIO AI SETIAP HARI",
   },
 
   en: {
@@ -200,7 +205,11 @@ const EXTRA = {
     requirement2:
       "Use any broker that provides the XAUUSD instrument, no IB required.",
 
-    mainCTA: "START WITH AI TRADING",
+    mainCTA:
+      "CHAT WITH TELEGRAM ADMIN FOR CONSULTATION (@AdmAIassistantGold)",
+
+    portfolioCTA:
+      "CLICK HERE — VIEW THE AI PORTFOLIO EVERY DAY",
   },
 
   zh: {
@@ -220,7 +229,11 @@ const EXTRA = {
     requirement2:
       "可使用任何提供 XAUUSD 产品的券商，无需 IB。",
 
-    mainCTA: "开始 AI 交易",
+    mainCTA:
+      "联系 Telegram 管理员咨询 (@AdmAIassistantGold)",
+
+    portfolioCTA:
+      "点击这里 — 每天查看 AI 投资组合",
   },
 };
 
@@ -768,13 +781,61 @@ export default function App() {
 
 
         {/* =================================================
-            01 OFFICE AGENT AI
+            01 SYARAT PENGGUNAAN
         ================================================= */}
 
         <section className="section">
 
           <SectionHeader
             n="01"
+            title={t.requirementTitle}
+          />
+
+
+          <div className="requirements">
+
+            {[1, 2, 3, 4].map((number) => (
+
+              <div
+
+                className="requirement"
+
+                key={number}
+
+              >
+
+                <div className="requirement-icon">
+
+                  {"0" + number}
+
+                </div>
+
+
+                <div className="requirement-text">
+
+                  {number === 2
+                    ? x.requirement2
+                    : t[`requirement${number}`]}
+
+                </div>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </section>
+
+
+        {/* =================================================
+            02 VIRTUAL OFFICE
+        ================================================= */}
+
+        <section className="section">
+
+          <SectionHeader
+            n="02"
             title={t.officeSectionTitle}
           />
 
@@ -785,13 +846,13 @@ export default function App() {
 
 
         {/* =================================================
-            02 PILIHAN PAKET
+            03 PILIHAN PAKET
         ================================================= */}
 
         <section className="section">
 
           <SectionHeader
-            n="02"
+            n="03"
             title={x.pricingTitle}
           />
 
@@ -896,53 +957,6 @@ export default function App() {
 
                 </a>
 
-              </div>
-
-            ))}
-
-          </div>
-
-        </section>
-
-
-        {/* =================================================
-            03 SYARAT
-        ================================================= */}
-
-        <section className="section">
-
-          <SectionHeader
-            n="03"
-            title={t.requirementTitle}
-          />
-
-
-          <div className="requirements">
-
-            {[1, 2, 3, 4].map((number) => (
-
-              <div
-
-                className="requirement"
-
-                key={number}
-
-              >
-
-                <div className="requirement-icon">
-
-                  {"0" + number}
-
-                </div>
-
-
-                <div className="requirement-text">
-
-                  {number === 2
-                    ? x.requirement2
-                    : t[`requirement${number}`]}
-
-                </div>
 
               </div>
 
@@ -959,17 +973,18 @@ export default function App() {
 
         <section className="main-cta">
 
+
+          {/* CHAT TELEGRAM ADMIN */}
+
           <a
 
             className="cta-button"
 
-            href={BOT_LINK}
+            href={ADMIN_LINK}
 
             target="_blank"
 
             rel="noopener noreferrer"
-
-            onClick={track("paid")}
 
           >
 
@@ -977,6 +992,8 @@ export default function App() {
 
           </a>
 
+
+          {/* LIHAT PORTOFOLIO AI */}
 
           <a
 
@@ -990,9 +1007,10 @@ export default function App() {
 
           >
 
-            {t.portfolioCTA}
+            {x.portfolioCTA}
 
           </a>
+
 
         </section>
 
@@ -1036,6 +1054,7 @@ export default function App() {
           © {new Date().getFullYear()} XAU AI Intelligence
 
         </footer>
+
 
       </main>
 
