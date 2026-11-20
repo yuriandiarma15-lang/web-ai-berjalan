@@ -5,7 +5,6 @@ import Office from "./Office.jsx";
 /* ================= KONFIGURASI ================= */
 
 const BOT_LINK = "https://t.me/Intradayxauusd_bot";
-
 const ADMIN_LINK = "https://t.me/AdmAIassistantGold";
 
 const PORTFOLIO_URL =
@@ -181,11 +180,9 @@ const EXTRA = {
     requirement2:
       "Bebas menggunakan broker apa pun yang menyediakan instrumen XAUUSD, tanpa IB.",
 
-    mainCTA:
-      "CHAT KE TELEGRAM ADMIN UNTUK KONSULTASI (@AdmAIassistantGold)",
+    mainCTA: "CHAT KE TELEGRAM ADMIN UNTUK KONSULTASI",
 
-    portfolioCTA:
-      "KLIK DI SINI — LIHAT PORTOFOLIO AI SETIAP HARI",
+    portfolioCTA: "KLIK DI SINI — LIHAT PORTOFOLIO AI SETIAP HARI",
   },
 
   en: {
@@ -205,11 +202,9 @@ const EXTRA = {
     requirement2:
       "Use any broker that provides the XAUUSD instrument, no IB required.",
 
-    mainCTA:
-      "CHAT WITH TELEGRAM ADMIN FOR CONSULTATION (@AdmAIassistantGold)",
+    mainCTA: "CHAT WITH TELEGRAM ADMIN FOR CONSULTATION",
 
-    portfolioCTA:
-      "CLICK HERE — VIEW THE AI PORTFOLIO EVERY DAY",
+    portfolioCTA: "CLICK HERE — VIEW THE AI PORTFOLIO EVERY DAY",
   },
 
   zh: {
@@ -229,11 +224,9 @@ const EXTRA = {
     requirement2:
       "可使用任何提供 XAUUSD 产品的券商，无需 IB。",
 
-    mainCTA:
-      "联系 Telegram 管理员咨询 (@AdmAIassistantGold)",
+    mainCTA: "联系 Telegram 管理员咨询",
 
-    portfolioCTA:
-      "点击这里 — 每天查看 AI 投资组合",
+    portfolioCTA: "点击这里 — 每天查看 AI 投资组合",
   },
 };
 
@@ -829,6 +822,81 @@ export default function App() {
 
 
         {/* =================================================
+            CTA TELEGRAM ADMIN DAN PORTOFOLIO
+            POSISI DI BAWAH SYARAT PENGGUNAAN
+        ================================================= */}
+
+        <section
+
+          className="main-cta"
+
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            width: "100%",
+          }}
+
+        >
+
+          {/* CHAT TELEGRAM ADMIN */}
+
+          <a
+
+            className="cta-button"
+
+            style={{
+              textAlign: "center",
+              display: "block",
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+
+            href={ADMIN_LINK}
+
+            target="_blank"
+
+            rel="noopener noreferrer"
+
+          >
+
+            {x.mainCTA}
+
+          </a>
+
+
+          {/* LIHAT PORTOFOLIO AI */}
+
+          <a
+
+            className="secondary-cta"
+
+            style={{
+              textAlign: "center",
+              display: "block",
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+
+            href={PORTFOLIO_URL}
+
+            target="_blank"
+
+            rel="noopener noreferrer"
+
+          >
+
+            {x.portfolioCTA}
+
+          </a>
+
+
+        </section>
+
+
+        {/* =================================================
             02 VIRTUAL OFFICE
         ================================================= */}
 
@@ -963,54 +1031,6 @@ export default function App() {
             ))}
 
           </div>
-
-        </section>
-
-
-        {/* =================================================
-            CTA UTAMA
-        ================================================= */}
-
-        <section className="main-cta">
-
-
-          {/* CHAT TELEGRAM ADMIN */}
-
-          <a
-
-            className="cta-button"
-
-            href={ADMIN_LINK}
-
-            target="_blank"
-
-            rel="noopener noreferrer"
-
-          >
-
-            {x.mainCTA}
-
-          </a>
-
-
-          {/* LIHAT PORTOFOLIO AI */}
-
-          <a
-
-            className="secondary-cta"
-
-            href={PORTFOLIO_URL}
-
-            target="_blank"
-
-            rel="noopener noreferrer"
-
-          >
-
-            {x.portfolioCTA}
-
-          </a>
-
 
         </section>
 
